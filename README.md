@@ -6,10 +6,10 @@ A hard 3D open-field defence game that runs in the browser. Drive your rover acr
 
 ## Features
 
-- Eight-level campaign with a different map and twist on each level
+- Ten-level campaign with a different map and twist on each level
 - Endless mode with a saved best score
 - Versus against an AI commander
-- Twelve structures and units, including tanks that improve on higher levels
+- Fourteen structures and units, including shield generators, gunships and tanks that improve on higher levels
 - Rover abilities: airstrike, repair pulse and EMP
 - Interactive Boot Camp training, plus a Field manual for reference
 - Keyboard, mouse and touch controls

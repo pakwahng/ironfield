@@ -6,7 +6,7 @@
 <title>Ironfield Vanguard</title>
 <meta name="description" content="A hard 3D open-field defence game. Drive your rover across the battlefield, deploy towers and troops, and hold your outposts against waves from every direction.">
 <meta property="og:title" content="Ironfield Vanguard">
-<meta property="og:description" content="A hard 3D open-field defence game: eight levels, endless mode and versus against an AI commander.">
+<meta property="og:description" content="A hard 3D open-field defence game: ten levels, endless mode and versus against an AI commander.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#141a21">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141a21'/%3E%3Cpath d='M6 22h20M9 22v-6h14v6M16 16l7-7' stroke='%235fd1c1' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -377,7 +377,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div id="help" class="panel">
       <b>WASD</b> drive &nbsp; <b>Shift</b> boost<br>
       <b>Q E</b> / right-drag turn view &nbsp; <b>Wheel</b> zoom<br>
-      <b>1-8</b> structures &nbsp; <b>9 0 - =</b> units<br>
+      <b>1-9</b> structures &nbsp; <b>0 - = [ ]</b> units<br>
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
       <b>Drag</b> box-select units &nbsp; <b>Tab</b> all units<br>
       <b>Right-click</b> move units &nbsp; <b>G</b> follow rover<br>
@@ -385,7 +385,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <b>Space</b> launch wave &nbsp; <b>F</b> speed &nbsp; <b>P</b> pause<br>
       <b>Z</b> airstrike &nbsp; <b>C</b> repair pulse &nbsp; <b>V</b> EMP<br>
       <b>M</b> sound &nbsp; <b>H</b> hide this panel<br>
-      <b>P</b> pause for the full <b>How to play</b> guide
+      <b>P</b> pause for the <b>Field manual</b>
     </div>
     <button id="helpBtn" type="button" hidden>Keys (H)</button>
 
@@ -556,16 +556,26 @@ const LEVELS=[
    ter:{ox:-1800,oz:600,amp:1.4,cA:0x4b463c,cB:0x6b5a48,sky:0x241c22,night:true},
    sites:[{name:'Command HQ',x:0,z:-20},{name:'Ember Station',x:-150,z:100},{name:'Vent Works',x:160,z:90},{name:'Cinder Post',x:20,z:185}],
    spawns:[{a:300,to:1},{a:250,to:1},{a:60,to:2},{a:110,to:2},{a:160,to:3},{a:200,to:3},{a:20,to:0},{a:340,to:0}],k0:2,kStep:2},
-  {name:'Iron Coast',foe:{x:180,z:-190},blurb:'Five sites along a broad coast. Siege guns and armour roll in.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','trooper','engineer','tank','rocket'],waves:12,off:4,supply:840,allow:2,bosses:[6,12],
+  {name:'Iron Coast',foe:{x:180,z:-190},blurb:'Five sites along a broad coast. Siege guns and armour roll in.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket'],waves:12,off:4,supply:840,allow:2,bosses:[6,12],
    mix:{siege:1.6,brute:1.4,juggernaut:1.6},
    ter:{ox:3100,oz:1900,amp:0.7,cA:0x7d7a62,cB:0xa39a7c,sky:0x34404c},
    sites:[{name:'Command HQ',x:0,z:0},{name:'Harbour',x:190,z:0},{name:'Lighthouse',x:-190,z:40},{name:'Dunes Camp',x:60,z:190},{name:'Salt Gate',x:-80,z:-170}],
    spawns:[{a:80,to:1},{a:110,to:1},{a:260,to:2},{a:290,to:2},{a:150,to:3},{a:190,to:3},{a:330,to:4},{a:300,to:4},{a:220,to:0},{a:20,to:0}],k0:2,kStep:2},
-  {name:'Final Bastion',foe:{x:190,z:-200},blurb:'The last line. Their HQ is fortified like never before. Everything comes.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','trooper','engineer','tank','rocket'],waves:14,off:4,supply:940,allow:1,bosses:[7,10,14],foeHp:1.5,
-   mix:{grunt:1.1,juggernaut:1.3,phantom:1.3,wasp:1.2},
+  {name:'Final Bastion',foe:{x:190,z:-200},blurb:'Their HQ is fortified like never before, and gunships finally join your arsenal.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:14,off:4,supply:940,allow:1,bosses:[7,10,14],foeHp:1.5,
+   mix:{grunt:1.1,juggernaut:1.3,phantom:1.3,wasp:1.2,carrier:1.2},
    ter:{ox:-2700,oz:-2100,amp:1.2,cA:0x5e4a3c,cB:0x7e5f48,sky:0x3a2228},
    sites:[{name:'Command HQ',x:0,z:30},{name:'Bastion North',x:-40,z:-150},{name:'Bastion East',x:170,z:40},{name:'Bastion West',x:-170,z:60},{name:'Bastion South',x:30,z:200}],
    spawns:[{a:330,to:1},{a:10,to:1},{a:70,to:2},{a:110,to:2},{a:250,to:3},{a:290,to:3},{a:160,to:4},{a:200,to:4},{a:45,to:0},{a:225,to:0}],k0:2,kStep:2},
+  {name:'Glacier Line',foe:{x:-200,z:195},blurb:'A frozen pass. Burrowers tunnel under your walls and break out beside your guns.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:12,off:4,supply:900,allow:1,bosses:[6,12],
+   mix:{burrower:1.6,brute:1.3,carrier:1.1},
+   ter:{ox:5200,oz:2400,amp:1.3,cA:0xb9c6cc,cB:0xe4ebee,sky:0x8a9cad},
+   sites:[{name:'Command HQ',x:0,z:40},{name:'Ice Station',x:-170,z:-60},{name:'Pass Fort',x:60,z:-170},{name:'Thaw Camp',x:170,z:80}],
+   spawns:[{a:250,to:1},{a:290,to:1},{a:340,to:2},{a:20,to:2},{a:80,to:3},{a:120,to:3},{a:170,to:0},{a:210,to:0}],k0:2,kStep:2},
+  {name:'Black Spire',foe:{x:0,z:-235},blurb:'The final assault. Five sites, a fortress HQ, carriers overhead and three boss waves.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:15,off:5,supply:1000,allow:1,bosses:[5,10,15],foeHp:1.8,
+   mix:{grunt:1.1,juggernaut:1.3,phantom:1.2,wasp:1.2,burrower:1.3,carrier:1.5},
+   ter:{ox:-4800,oz:3600,amp:1.35,cA:0x3e3234,cB:0x5a4038,sky:0x1e1418,night:true},
+   sites:[{name:'Command HQ',x:0,z:20},{name:'Spire North',x:-150,z:-130},{name:'Spire East',x:155,z:-125},{name:'Spire South',x:150,z:150},{name:'Spire West',x:-150,z:145}],
+   spawns:[{a:300,to:1},{a:330,to:1},{a:30,to:2},{a:60,to:2},{a:120,to:3},{a:150,to:3},{a:210,to:4},{a:240,to:4},{a:90,to:0},{a:270,to:0}],k0:2,kStep:2},
 ];
 // Endless: the Last Light layout at night, every structure unlocked, waves without end. The enemy HQ rebuilds stronger.
 // Versus arena: mirrored for both players, three sites, no enemy HQ. Neutral waves on a timer, raids from your rival.
@@ -573,11 +583,11 @@ const LEVELS=[
 const TRAINDEF={name:'Boot Camp',training:true,blurb:'',towers:['sentry','wall','trooper'],waves:Infinity,off:0,supply:200,allow:1,bosses:[],
   ter:{ox:600,oz:900,amp:0.6,cA:0x617040,cB:0x8d8152,sky:0x2f3a48},foe:{x:250,z:250},
   sites:[{name:'Command HQ',x:0,z:30},{name:'Range Post',x:115,z:-85}],spawns:[{a:0,to:0}],k0:1,kStep:9};
-const VSDEF={name:'Crossfire',vs:true,blurb:'',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','trooper','engineer','tank','rocket'],waves:Infinity,off:0,supply:520,allow:1,bosses:[],
+const VSDEF={name:'Crossfire',vs:true,blurb:'',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:Infinity,off:0,supply:520,allow:1,bosses:[],
   ter:{ox:4100,oz:-3300,amp:1.0,cA:0x5d6a40,cB:0x88804e,sky:0x2e3846},foe:{x:240,z:240},
   sites:[{name:'Command HQ',x:0,z:20},{name:'East Post',x:150,z:-80},{name:'West Post',x:-150,z:-80}],
   spawns:[{a:20,to:1},{a:70,to:1},{a:340,to:2},{a:290,to:2},{a:150,to:0},{a:210,to:0}],k0:1,kStep:3};
-const ENDLESS=Object.assign({},LEVELS[4],{name:'Last Stand',endless:true,towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','trooper','engineer','tank','rocket'],mix:{juggernaut:1,phantom:1},blurb:'Night falls on the four outposts. Hold as long as you can.',waves:Infinity,off:4,supply:520,allow:1,bosses:[],
+const ENDLESS=Object.assign({},LEVELS[4],{name:'Last Stand',endless:true,towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],mix:{juggernaut:1,phantom:1,burrower:1,carrier:1},blurb:'Night falls on the four outposts. Hold as long as you can.',waves:Infinity,off:4,supply:520,allow:1,bosses:[],
   ter:{ox:2600,oz:-700,amp:1.15,cA:0x4a5236,cB:0x5f5a44,sky:0x1b2130,night:true}});
 let TER={ox:0,oz:0,amp:1,flat:[{x:0,z:0}]};
 function H(x,z){
@@ -730,16 +740,20 @@ const BUILD={
     icon:'<path d="M13 2L6 13h5l-2 9 8-12h-5z"/>'},
   flak:{key:'7',name:'Flak Battery',cost:110,hp:230,range:32,dmg:28,rate:0.55,splash:3.5,radius:1.8,barY:3.4,airOnly:true,blurb:'Shreds flying drones. Cannot hit ground targets.',
     icon:'<path d="M4 20h16M7 20v-4h10v4"/><path d="M10 16l5-11M14 16l5-9"/>'},
-  trooper:{key:'9',unit:true,name:'Rifle Squad',cost:45,hp:169,speed:12,range:17,dmg:6,rate:0.3,radius:1.1,barY:2.6,blurb:'Cheap riflemen. Hit ground and air.',
+  trooper:{key:'0',unit:true,name:'Rifle Squad',cost:45,hp:169,speed:12,range:17,dmg:6,rate:0.3,radius:1.1,barY:2.6,blurb:'Cheap riflemen. Hit ground and air.',
     icon:'<circle cx="12" cy="5" r="2.2"/><path d="M12 8v7M8 11h8M9 21l3-6 3 6"/>'},
-  engineer:{key:'0',unit:true,name:'Field Engineer',cost:70,hp:195,speed:13,range:12,dmg:3,rate:0.5,heal:12,healR:12,radius:1.1,barY:2.8,blurb:'Repairs structures and units nearby.',
+  engineer:{key:'-',unit:true,name:'Field Engineer',cost:70,hp:195,speed:13,range:12,dmg:3,rate:0.5,heal:12,healR:12,radius:1.1,barY:2.8,blurb:'Repairs structures and units nearby.',
     icon:'<path d="M14.5 5.5a4 4 0 0 0-5 5L4 16l4 4 5.5-5.5a4 4 0 0 0 5-5L16 12l-4-4z"/>'},
+  shield:{key:'9',name:'Shield Generator',cost:160,hp:350,range:14,cap:420,regen:28,radius:1.8,barY:4.6,blurb:'Projects a dome that soaks up damage for everything within 14 m.',
+    icon:'<path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16v4M8 20h8"/><circle cx="12" cy="16" r="1.6"/>'},
   rail:{key:'8',name:'Rail Cannon',cost:220,hp:270,range:52,dmg:170,rate:3.6,radius:1.9,barY:3.6,blurb:'Long-range slug that always picks the toughest hostile in reach.',
     icon:'<path d="M3 18h8M5 18v-4h6v4"/><path d="M9 14l11-8"/><path d="M13 9l2 2M16 7l2 2"/>'},
-  tank:{key:'-',unit:true,mk:1,name:'Lancer Tank',cost:160,hp:728,speed:9.5,range:26,dmg:38,rate:1.7,splash:3,radius:1.8,barY:3.4,blurb:'Heavy armour and a long gun. Ground targets only.',
+  tank:{key:'=',unit:true,mk:1,name:'Lancer Tank',cost:160,hp:728,speed:9.5,range:26,dmg:38,rate:1.7,splash:3,radius:1.8,barY:3.4,blurb:'Heavy armour and a long gun. Ground targets only.',
     icon:'<rect x="3" y="12" width="18" height="6" rx="3"/><rect x="7" y="8" width="8" height="4"/><path d="M15 9.5h7"/>'},
-  rocket:{key:'=',unit:true,name:'Rocket Squad',cost:90,hp:195,speed:11,range:22,dmg:40,rate:1.8,radius:1.1,barY:2.6,blurb:'Anti-armour rockets. Hit ground and air, extra damage to heavy targets.',
+  rocket:{key:'[',unit:true,name:'Rocket Squad',cost:90,hp:195,speed:11,range:22,dmg:40,rate:1.8,radius:1.1,barY:2.6,blurb:'Anti-armour rockets. Hit ground and air, extra damage to heavy targets.',
     icon:'<circle cx="9" cy="6" r="2"/><path d="M9 9v6M6 21l3-6 3 6"/><path d="M5 11l14-5"/>'},
+  gunship:{key:']',unit:true,fly:true,name:'Gunship',cost:180,hp:420,speed:18,range:20,dmg:13,rate:0.32,radius:1.6,barY:2.6,blurb:'Attack helicopter. Flies over walls, hits ground and air. Melee hostiles cannot reach it.',
+    icon:'<path d="M3 7h18M12 7v3"/><path d="M6 13h9l3 3H8z"/><path d="M18 14l3-2"/>'},
 };
 // Tank marks: the tank card improves as the campaign goes on. Level index 2-3: Mk I, 4-5: Mk II, 6+ and Endless: Mk III.
 const TANK_TIERS=[
@@ -755,18 +769,20 @@ function applyTankTier(){
   if(ghosts.tank){ scene.remove(ghosts.tank); delete ghosts.tank; }
   const card=document.querySelector('.card[data-type="tank"] .nm'); if(card) card.textContent=t.name;
 }
-const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','trooper','engineer','tank','rocket'];
-const KEY_IDX={Digit1:0,Digit2:1,Digit3:2,Digit4:3,Digit5:4,Digit6:5,Digit7:6,Digit8:7,Digit9:8,Digit0:9,Minus:10,Equal:11};
+const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship'];
+const KEY_IDX={Digit1:0,Digit2:1,Digit3:2,Digit4:3,Digit5:4,Digit6:5,Digit7:6,Digit8:7,Digit9:8,Digit0:9,Minus:10,Equal:11,BracketLeft:12,BracketRight:13};
 const UNIT_CAP=12;
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
 const OUTDEF={name:'Outpost',hp:2200,radius:4.4,barY:9};
-const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],phantom:['phantom','phantoms'],boss:['boss','bosses']};
+const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],boss:['boss','bosses']};
 const FOE_TIPS={
   sapper:['Sappers sighted','They sprint at your structures and blow up. Kill them before they arrive.'],
   warden:['Wardens sighted','Their purple field halves damage to every hostile inside it. Kill the Warden first, or use Tesla Coils.'],
   wasp:['Wasp drones sighted','They fly over barricades. Mortars and tanks cannot hit them. Use sentries, rifles or Flak.'],
   brood:['Broods sighted','When a Brood dies it bursts into a swarm of mites. Keep guns on the spot.'],
   juggernaut:['Juggernauts sighted','Armour shrugs off half of all small-arms fire. Use mortars, tanks, rockets, Tesla or the Rail Cannon.'],
+  burrower:['Burrowers sighted','They tunnel underground where nothing can hit them, then break out next to a structure. Spread your guns so each covers the others. EMP forces them up.'],
+  carrier:['Carriers sighted','Heavy flyers that launch wasp drones every few seconds. Mortars cannot hit them. Rail Cannons, Flak, rockets and gunships bring them down.'],
   phantom:['Phantoms sighted','Cloaked raiders. They show up only near your forces or once hit. Frost pylons, mortar splash and EMP flush them out.'],
 };
 // Difficulty and speed live in OPT, saved per browser.
@@ -776,7 +792,7 @@ try{ const o=JSON.parse(localStorage.getItem('ifv-options')||'null'); if(o) OPT=
 function saveOpt(){ try{localStorage.setItem('ifv-options',JSON.stringify(OPT));}catch(e){} }
 const DF=()=>DIFFS[OPT.diff];
 const TOWER_LEVEL={}; ORDER_INIT();
-function ORDER_INIT(){ for(const t of ['sentry','mortar','frost','wall','pump','tesla','flak','rail','trooper','engineer','tank','rocket']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
+function ORDER_INIT(){ for(const t of ['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
 
 // atk: shot = hitscan rifle fire, shell = lobbed splash round, melee = strike (cleave hits everything near the target), blast = suicide charge
 const FOES={
@@ -792,6 +808,8 @@ const FOES={
   mite:{hp:22,speed:10,dmg:5,rate:0.6,range:1,atk:'melee',reward:1,r:0.45,aggro:12,barY:1.2},
   juggernaut:{hp:950,speed:2.6,dmg:55,rate:2.4,range:18,atk:'shell',splash:3.2,reward:40,r:1.9,aggro:24,barY:4.6,armour:0.5},
   phantom:{hp:120,speed:9,dmg:24,rate:0.8,range:1.3,atk:'melee',reward:12,r:0.8,aggro:30,barY:2.6,cloak:true},
+  burrower:{hp:300,speed:6.5,dmg:30,rate:1.0,range:1.8,atk:'melee',cleave:2.2,reward:22,r:1.2,aggro:80,barY:2.8,burrow:true},
+  carrier:{hp:950,speed:3,dmg:0,rate:99,range:16,atk:'none',reward:50,r:2.4,aggro:20,barY:2.8,fly:true,carrier:7},
 };
 
 // ---------------------------------------------------------------- models
@@ -917,6 +935,16 @@ function modelFoe(type){
     part(G.box,M.foe,2,1,2.2,0,1.8,0.3,body);
     part(G.cyl6,M.foeDark,0.32,3.2,0.32,0,2,-1.8,body).rotation.x=-Math.PI/2;
     part(G.box,M.foeGlow,2.02,0.14,0.06,0,2.1,-0.82,body);
+  } else if(type==='burrower'){
+    part(G.dode,M.foe,1.3,0.9,1.7,0,0.9,0,body);
+    for(const x of [-0.7,0.7]){ const c=part(G.cone4,M.foeDark,0.35,1.1,0.35,x,0.7,-1.3,body); c.rotation.x=-Math.PI/2; }
+    part(G.box,M.foeGlow,0.9,0.12,0.06,0,1.15,-1.05,body);
+    for(let i=0;i<4;i++) part(G.box,M.foeDark,0.25,0.5,0.25,i<2?-0.7:0.7,0.25,i%2?0.5:-0.3,body);
+  } else if(type==='carrier'){
+    part(G.box,M.foeDark,4.2,0.8,5,0,0,0,body);
+    part(G.box,M.foe,2.4,0.7,3,0,0.7,0.3,body);
+    for(const x of [-2.4,2.4]){ part(G.cyl6,M.foe,0.7,1,0.7,x,0,-1.4,body); part(G.ico,M.foeGlow,0.4,0.4,0.4,x,-0.5,1.4,body).castShadow=false; }
+    part(G.box,M.foeGlow,2.2,0.14,0.08,0,0.9,-1.25,body);
   } else if(type==='phantom'){
     part(G.cone4,M.foeDark,0.6,2.2,0.6,0,1.1,0,body).rotation.y=Math.PI/4;
     part(G.box,M.foe,0.7,0.5,0.6,0,2.35,0,body);
@@ -1002,7 +1030,26 @@ function modelRocket(){
   });
   return {g,head};
 }
-const MODEL={rail:modelRail,rocket:modelRocket,sentry:modelSentry,mortar:modelMortar,frost:modelFrost,wall:modelWall,pump:modelPump,tesla:modelTesla,flak:modelFlak,trooper:modelTrooper,engineer:modelEngineer,tank:modelTank};
+function modelShield(){
+  const g=new THREE.Group();
+  part(G.cyl6,M.hullDark,1.8,0.7,1.8,0,0.35,0,g);
+  part(G.cyl,M.steel,0.45,2.8,0.45,0,2.1,0,g);
+  for(const y of [1.6,2.6]) part(G.cyl,M.ally,1.0,0.14,1.0,0,y,0,g);
+  const head=new THREE.Group(); head.position.y=3.9; g.add(head);
+  part(G.ico,std(0x9fd0ff,{emissive:0x6fb8ff,emissiveIntensity:1}),0.75,0.75,0.75,0,0,0,head).castShadow=false;
+  return {g,head};
+}
+function modelGunship(){
+  const g=new THREE.Group(), head=new THREE.Group(); g.add(head);
+  part(G.box,M.hull,1.2,0.9,2.6,0,0,0,head);
+  part(G.box,M.hullDark,0.3,0.3,2.2,0,0.1,1.9,head);
+  part(G.box,M.hullDark,1.0,0.5,0.12,0,0.25,3.0,head);
+  part(G.box,M.ally,1.22,0.12,0.6,0,0.3,-0.4,head);
+  for(const x of [-0.85,0.85]) part(G.box,M.steel,0.2,0.2,1.2,x,-0.3,-0.6,head);
+  const rotor=part(G.box,M.steel,5.2,0.05,0.28,0,0.75,0,head); rotor.castShadow=false; g.userData.rotor=rotor;
+  return {g,head};
+}
+const MODEL={shield:modelShield,gunship:modelGunship,rail:modelRail,rocket:modelRocket,sentry:modelSentry,mortar:modelMortar,frost:modelFrost,wall:modelWall,pump:modelPump,tesla:modelTesla,flak:modelFlak,trooper:modelTrooper,engineer:modelEngineer,tank:modelTank};
 
 // ---------------------------------------------------------------- ground-hugging rings
 function makeRing(color,opacity){
@@ -1166,7 +1213,7 @@ const focus=new THREE.Vector3(0,0,14);
 let camYaw=0.6, camPitch=0.92, camDist=52, camYawT=0.6, camDistT=52;
 
 function clearWorld(){
-  structures.forEach(s=>scene.remove(s.g)); enemies.forEach(e=>scene.remove(e.g)); projectiles.forEach(p=>scene.remove(p.m)); crates.forEach(c=>scene.remove(c.g));
+  structures.forEach(s=>{ scene.remove(s.g); if(s.dome) scene.remove(s.dome); }); enemies.forEach(e=>scene.remove(e.g)); projectiles.forEach(p=>scene.remove(p.m)); crates.forEach(c=>scene.remove(c.g));
   fx.forEach(f=>{scene.remove(f.m);f.m.material.dispose();});
   structures=[]; enemies=[]; projectiles=[]; crates=[]; sites=[]; fx.length=0; floats.length=0;
   if(rover){ scene.remove(rover.g); rover=null; }
@@ -1233,6 +1280,7 @@ function effN(w){ return Math.round(w+LV().off*Math.min(1,(w+1)/4)); }
 function waveCounts(n,lvl){
   const c=baseCounts(n,lvl), mix=LV().mix;
   const late=lvl>=5||!!LV().endless; c.juggernaut=(late&&n>=6)?Math.floor((n-4)/3):0; c.phantom=(late&&n>=7)?Math.floor((n-4)/2):0;
+  c.burrower=((lvl>=6||LV().endless)&&n>=6)?Math.floor((n-4)/3):0; c.carrier=((lvl>=7||LV().endless)&&n>=8)?Math.floor((n-6)/4):0;
   if(mix) for(const k in mix) if(c[k]!==undefined) c[k]=Math.round(c[k]*mix[k]);
   return c;
 }
@@ -1314,7 +1362,7 @@ function makeFoe(type,x,z,home){
   const mdl=modelFoe(type); mdl.g.position.set(x,H(x,z),z); scene.add(mdl.g);
   const n=effN(Math.max(1,S.wave))-1, scale=1+0.2*n+0.012*n*n;
   const hp=Math.round(def.hp*scale*DF().hp);
-  enemies.push({type,def,g:mdl.g,body:mdl.body,x,z,px:x,pz:z,vx:0,vz:0,hp,maxHp:hp,cd:rand(0,def.rate),tgt:null,home:home,retarget:0,slowT:0,slowMul:1,flash:0,bob:Math.random()*TAU,dead:false,yaw:0});
+  enemies.push({burrowed:!!def.burrow,cloaked:!!def.burrow,cT:def.carrier||0,type,def,g:mdl.g,body:mdl.body,x,z,px:x,pz:z,vx:0,vz:0,hp,maxHp:hp,cd:rand(0,def.rate),tgt:null,home:home,retarget:0,slowT:0,slowMul:1,flash:0,bob:Math.random()*TAU,dead:false,yaw:0});
 }
 
 // ---------------------------------------------------------------- crates
@@ -1350,7 +1398,7 @@ const sellValue=s=>Math.round(s.spent*0.5);
 // ---------------------------------------------------------------- damage
 function y0Of(e){ return H(e.x,e.z)+(e.def.fly?FLY_H:e.def.r); }
 function hurtEnemy(e,dmg,pierce,small){
-  if(e.dead) return; if(small&&e.def.armour) dmg*=e.def.armour; if(e.def.cloak) e.revealT=2.5; if(!pierce&&e.warded>0) dmg*=0.5; e.hp-=dmg; e.flash=0.08;
+  if(e.dead) return; if(e.burrowed) surface(e); if(small&&e.def.armour) dmg*=e.def.armour; if(e.def.cloak) e.revealT=2.5; if(!pierce&&e.warded>0) dmg*=0.5; e.hp-=dmg; e.flash=0.08;
   if(e.hp<=0){
     e.dead=true; S.kills++; S.supply+=e.def.reward;
     shatter(e.x,y0Of(e),e.z,e.type==='boss'?14:e.def.r>1.2?7:4,e.type==='boss'?M.boss:M.foe,Math.max(1,e.def.r*1.4));
@@ -1366,6 +1414,13 @@ function hurtTarget(t,dmg){
   if(!t.alive) return;
   if(t.isUnit){ t.hp-=dmg; t.hit=0.1; t.lastHit=0; sfx('hit',t.x,t.z); if(t.hp<=0) killUnit(t); return; }
   if(S.training&&t.isSite){ t.lastHit=0; t.hit=0.12; return; } // sites cannot fall in training
+  for(const gsh of structures){
+    if(dmg<=0) break;
+    if(gsh.type!=='shield'||!gsh.alive||!(gsh.energy>0)) continue;
+    if(cpoint(t,gsh.x,gsh.z).d>sRange(gsh)) continue;
+    const take=Math.min(gsh.energy,dmg*0.85); gsh.energy-=take; dmg-=take; gsh.absorbT=0.25; gsh.idleT=0;
+  }
+  if(dmg<=0.01){ t.hit=0.06; return; }
   t.hp-=dmg; t.hit=0.12; sfx('hit',t.x,t.z);
   if(t.isSite){
     t.lastHit=0;
@@ -1374,7 +1429,7 @@ function hurtTarget(t,dmg){
   if(t.hp<=0) destroyStructure(t);
 }
 function destroyStructure(s){
-  s.alive=false; scene.remove(s.g); shatter(s.x,H(s.x,s.z)+1.5,s.z,s.isSite?18:8,s.isSite?M.hullDark:M.hull,s.isSite?3:1.6);
+  s.alive=false; scene.remove(s.g); if(s.dome){ scene.remove(s.dome); s.dome.geometry.dispose(); } shatter(s.x,H(s.x,s.z)+1.5,s.z,s.isSite?18:8,s.isSite?M.hullDark:M.hull,s.isSite?3:1.6);
   boom(s.x,H(s.x,s.z)+1.5,s.z,s.isSite?14:5,0xffb060,s.isSite?1.2:0.6); sfx('boom',s.x,s.z);
   structures=structures.filter(o=>o!==s);
   if(S.sel===s) select(null);
@@ -1654,10 +1709,10 @@ function dismissUnits(){
   units=units.filter(u=>u.alive); selUnits=[]; S.supply+=v;
   floatText(player.x,H(player.x,player.z)+4,player.z,'+'+v+' refund',COL.signal); sfx('pickup'); reslotFollowers(); refreshUnitPanel(true);
 }
-function unitAtScreen(cx,cy){ let best=null,bd=28; for(const u of units){ const p=proj(u.x,H(u.x,u.z)+1,u.z); if(!p) continue; const d=Math.hypot(p.x-cx,p.y-cy); if(d<bd){bd=d;best=u;} } return best; }
+function unitAtScreen(cx,cy){ let best=null,bd=28; for(const u of units){ const p=proj(u.x,H(u.x,u.z)+(u.def.fly?FLY_H+1:1),u.z); if(!p) continue; const d=Math.hypot(p.x-cx,p.y-cy); if(d<bd){bd=d;best=u;} } return best; }
 function unitsInBox(b){
   const x0=Math.min(b.x0,b.x1), x1=Math.max(b.x0,b.x1), y0=Math.min(b.y0,b.y1), y1=Math.max(b.y0,b.y1);
-  return units.filter(u=>{ const p=proj(u.x,H(u.x,u.z)+1,u.z); return p&&p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1; });
+  return units.filter(u=>{ const p=proj(u.x,H(u.x,u.z)+(u.def.fly?FLY_H+1:1),u.z); return p&&p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1; });
 }
 function updateUnits(dt){
   for(const u of units){
@@ -1683,7 +1738,7 @@ function updateUnits(dt){
       u.x+=dx/L*step; u.z+=dz/L*step; moving=step>0.01; u.yaw=angLerp(u.yaw,yawTo(dx,dz),dt*8);
     }
     u.x=clamp(u.x,-MAP,MAP); u.z=clamp(u.z,-MAP,MAP);
-    for(const st of structures){ const c=cpoint(st,u.x,u.z); if(c.d<u.radius){ const p=u.radius-c.d; u.x+=c.nx*p; u.z+=c.nz*p; } }
+    if(!d.fly) for(const st of structures){ const c=cpoint(st,u.x,u.z); if(c.d<u.radius){ const p=u.radius-c.d; u.x+=c.nx*p; u.z+=c.nz*p; } }
     for(const st of foeStructs){ if(st.dead) continue; const c=cpoint(st,u.x,u.z); if(c.d<u.radius){ const p=u.radius-c.d; u.x+=c.nx*p; u.z+=c.nz*p; } }
     const y=H(u.x,u.z), t=u.tgt;
     u.cd-=dt;
@@ -1697,7 +1752,7 @@ function updateUnits(dt){
         else if(u.type==='tank'){ const dist=Math.hypot(t.x-u.x,t.z-u.z), a=u.yaw+u.head.rotation.y, ox=Math.cos(a)*0.4, oz=-Math.sin(a)*0.4;
           for(const sd of (d.twin?[-1,1]:[0])) fireShell(u.x+ox*sd,y+1.7,u.z+oz*sd,t.x+t.vx*0.3+rand(-0.6,0.6)*Math.abs(sd),t.z+t.vz*0.3+rand(-0.6,0.6)*Math.abs(sd),0.25+dist*0.012+(sd>0?0.06:0),1.5,'ally',{dmg:uDmg(u),splash:d.splash});
           sfx('thump',u.x,u.z); }
-        else { tracer(u.x,y+1.3,u.z,t.x+rand(-0.3,0.3),tY(t),t.z+rand(-0.3,0.3),u.type==='engineer'?0xc8f0a8:0xffe2a0); hurtHostile(t,uDmg(u),true); sfx('shot',u.x,u.z); }
+        else { tracer(u.x,y+(d.fly?FLY_H+0.6:1.3),u.z,t.x+rand(-0.3,0.3),tY(t),t.z+rand(-0.3,0.3),u.type==='engineer'?0xc8f0a8:0xffe2a0); hurtHostile(t,uDmg(u),true); sfx('shot',u.x,u.z); }
       }
     } else { u.cd=Math.max(0,u.cd); u.head.rotation.y=angLerp(u.head.rotation.y,0,dt*3); }
     if(d.coax){ u.cd2=(u.cd2||0)-dt; if(u.cd2<=0){ const m=nearestEnemy(u.x,u.z,d.coax.range,0,0); if(m){ u.cd2=d.coax.rate; tracer(u.x,y+2.4,u.z,m.x+rand(-0.3,0.3),tY(m),m.z+rand(-0.3,0.3),0xffe2a0); hurtEnemy(m,d.coax.dmg*(1+0.35*(u.rank-1)),false,true); sfx('shot',u.x,u.z); } else u.cd2=0.2; } }
@@ -1716,7 +1771,8 @@ function updateUnits(dt){
         if(Math.random()<dt*8) tracer(u.x,y+2.4,u.z,b.x,H(b.x,b.z)+1.5,b.z,COL.ok);
       }
     }
-    u.g.position.set(u.x,y+(moving&&u.type==='trooper'?Math.abs(Math.sin(S.time*11))*0.12:0),u.z); u.g.rotation.y=u.yaw;
+    u.g.position.set(u.x,y+(d.fly?FLY_H+1+Math.sin(S.time*2+u.x)*0.3:(moving&&u.type==='trooper'?Math.abs(Math.sin(S.time*11))*0.12:0)),u.z); u.g.rotation.y=u.yaw;
+    if(u.g.userData.rotor) u.g.userData.rotor.rotation.y+=dt*28;
     const rs=1+0.07*(u.rank-1); if(u.hit>0){u.hit-=dt; u.g.scale.setScalar(rs*1.08);} else u.g.scale.setScalar(rs);
   }
   for(let i=0;i<units.length;i++) for(let j=i+1;j<units.length;j++){
@@ -1786,7 +1842,7 @@ function useAbility(k,x,z){
     pulse(px,pz,R,COL.ok); pulse(px,pz,R*0.6,COL.ok); floatText(px,H(px,pz)+4,pz,'Repair pulse',COL.ok); sfx('clear');
   } else if(k==='emp'){
     let n=0;
-    for(const e of enemies){ if(e.dead) continue; if(Math.hypot(e.x-px,e.z-pz)<R){ e.stunT=e.type==='boss'||e.type==='juggernaut'?1.5:3.5; e.revealT=5; n++; } }
+    for(const e of enemies){ if(e.dead) continue; if(Math.hypot(e.x-px,e.z-pz)<R){ e.stunT=e.type==='boss'||e.type==='juggernaut'||e.type==='carrier'?1.5:3.5; e.revealT=5; if(e.burrowed) surface(e); n++; } }
     for(const f of foeStructs){ if(!f.dead&&f.kind==='turret'&&Math.hypot(f.x-px,f.z-pz)<R+4) f.stunT=6; }
     pulse(px,pz,R,0x9fd8ff); pulse(px,pz,R*0.5,0x9fd8ff); floatText(px,H(px,pz)+4,pz,n?n+' hostiles stunned':'EMP burst',0x9fd8ff); sfx('zap'); sfx('frost');
   }
@@ -1993,7 +2049,7 @@ function doUpgrade(){
 function doSell(){
   const s=S.sel; if(!s||s.isSite||s.isFoe) return; if(!inReach(s)){sfx('deny');return;}
   const v=sellValue(s); S.supply+=v; floatText(s.x,H(s.x,s.z)+3,s.z,'+'+v,COL.signal);
-  s.alive=false; scene.remove(s.g); structures=structures.filter(o=>o!==s); select(null); sfx('pickup');
+  s.alive=false; scene.remove(s.g); if(s.dome){ scene.remove(s.dome); s.dome.geometry.dispose(); } structures=structures.filter(o=>o!==s); select(null); sfx('pickup');
 }
 $('upBtn').addEventListener('click',doUpgrade);
 $('sellBtn').addEventListener('click',doSell);
@@ -2018,6 +2074,7 @@ function refreshSel(force){
   if(s.type==='flak') lines.push('Hits <b>flying</b> hostiles only');
   if(s.type==='rail') lines.push('Targets the <b>toughest</b> hostile in range');
   if(s.type==='tesla') lines.push('Chains to <b>'+(s.def.chain+s.level-1)+'</b> targets, pierces Warden fields');
+  if(s.type==='shield') lines.push('Shield <b>'+Math.round(s.energy||0)+' / '+Math.round(s.def.cap*(1+0.5*(s.level-1)))+'</b> &middot; dome <b>'+sRange(s).toFixed(0)+' m</b>');
   if(['sentry','mortar','frost','tesla','flak','rail'].includes(s.type)) lines.push('Range <b>'+sRange(s).toFixed(0)+' m</b> &middot; Damage <b>'+sDmg(s).toFixed(0)+'</b>');
   if(s.type==='mortar') lines.push('Blast radius <b>'+d.splash+' m</b>, dead zone <b>'+d.minRange+' m</b>');
   if(s.type==='frost') lines.push('Slows hostiles by <b>50%</b>');
@@ -2083,6 +2140,8 @@ const RAIDS=[
   {k:'siege',n:2,cost:160,name:'Siege battery',at:150},
   {k:'phantom',n:3,cost:200,name:'Phantom cell',at:240},
   {k:'juggernaut',n:1,cost:320,name:'Juggernaut',at:300},
+  {k:'burrower',n:3,cost:200,name:'Burrower team',at:210},
+  {k:'carrier',n:1,cost:420,name:'Carrier',at:360},
   {k:'boss',n:1,cost:1200,name:'Warlord',at:480},
 ];
 const VS_GAP=45, RAID_DELAY=6, INC_PER=0.004;
@@ -2305,7 +2364,7 @@ const TSTEPS=[
   {say:'Block their path with a Barricade',keys:()=>dev(K('4')+' to pick it &nbsp;'+K('R')+' rotates','Tap Barricade, then tap in front of the sentry'),
    enter(){ S.supply=Math.max(S.supply,60); const st=firstOf('sentry')||hq; trData.p={x:st.x,z:st.z-9}; setBeacon(trData.p.x,trData.p.z,4.5,true); setHL('.card[data-type="wall"]'); },
    done:()=>!!firstOf('wall')},
-  {say:'Deploy a Rifle Squad',keys:()=>dev(K('9')+' then click near the rover','Tap Rifle Squad, then tap near the rover'),
+  {say:'Deploy a Rifle Squad',keys:()=>dev(K('0')+' then click near the rover','Tap Rifle Squad, then tap near the rover'),
    enter(){ S.supply=Math.max(S.supply,70); clearBeacon(); setHL('.card[data-type="trooper"]'); },
    done:()=>units.length>=1},
   {say:'Send your squad to the beacon',keys:()=>dev('Click the squad (or drag a box), then right-click the beacon','Tap the squad, then tap the beacon'),
@@ -2400,10 +2459,12 @@ const FOE_GUIDE={
   wasp:['air','Flying drone. Crosses barricades. Mortars and tanks cannot hit it.','Sentries, Rifle Squads, Rocket Squads, Flak Batteries, Titan machine guns.'],
   brood:['melee','Heavy beast with a cleaving swing. Bursts into five mites when it dies.','Keep guns on the spot. Frost and Tesla mop up the mites.'],
   juggernaut:['shell','Armoured tank. Small arms do half damage to it. Shells from 18 m.','Mortars, tanks, Rocket Squads, Tesla, Rail Cannon, airstrikes.'],
+  burrower:['melee','Tunnels underground, untouchable, then bursts up beside a structure with a cleaving strike.','Overlapping guns, Frost to slow it once up. EMP or any splash damage forces it to surface.'],
+  carrier:['air','Heavy flyer. Launches three wasp drones every 7 s and keeps its distance.','Rail Cannon, Flak, Rocket Squads, gunships. Kill it fast or the drones pile up.'],
   phantom:['melee','Cloaked raider. Invisible until it is within 12 m of your forces, or until hit.','Frost Pylons, mortar splash and EMP reveal it. Then anything can kill it.'],
   boss:['melee','Every 5th wave or so. Cleaving melee plus a three-shell barrage every 6 s.','Rail Cannon, tanks, airstrike, EMP to buy time. Keep troops spread out.'],
 };
-const FOE_FIRST={grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
+const FOE_FIRST={burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
 const GUIDE=[
   {id:'goal',name:'Goal',html:()=>`
     <h2>Hold the line</h2>
@@ -2422,7 +2483,7 @@ const GUIDE=[
       <div class="gcard"><h4>Keyboard and mouse</h4><ul>
         <li>${kb('W')}${kb('A')}${kb('S')}${kb('D')} drive, ${kb('Shift')} boost</li>
         <li>${kb('Q')} ${kb('E')} or right-drag to turn the view, wheel to zoom</li>
-        <li>${kb('1')} to ${kb('8')} pick a structure, ${kb('9')} ${kb('0')} ${kb('-')} ${kb('=')} pick a unit</li>
+        <li>${kb('1')} to ${kb('9')} pick a structure, ${kb('0')} ${kb('-')} ${kb('=')} ${kb('[')} ${kb(']')} pick a unit</li>
         <li>Click inside the teal ring to deploy. ${kb('R')} rotates a barricade</li>
         <li>Click a structure to inspect, ${kb('U')} upgrade, ${kb('X')} sell</li>
         <li>Click or drag a box to select units, ${kb('Tab')} selects all</li>
@@ -2745,6 +2806,16 @@ function updateStructures(dt){
           boom(t.x,ty,t.z,2.2,0xffc070,0.25); sfx('shot',s.x,s.z);
         }
       } else s.cd=Math.max(0,s.cd);
+    } else if(s.type==='shield'){
+      const cap=s.def.cap*(1+0.5*(s.level-1));
+      if(s.energy===undefined){ s.energy=cap; s.idleT=9;
+        s.dome=new THREE.Mesh(new THREE.SphereGeometry(1,24,14,0,TAU,0,Math.PI/2),new THREE.MeshBasicMaterial({color:0x7fc4ff,transparent:true,opacity:0.12,depthWrite:false,side:THREE.DoubleSide}));
+        s.dome.position.set(s.x,y,s.z); scene.add(s.dome); }
+      s.idleT=(s.idleT||0)+dt; if(s.absorbT>0) s.absorbT-=dt;
+      if(s.idleT>3) s.energy=Math.min(cap,s.energy+s.def.regen*(1+0.3*(s.level-1))*dt);
+      const R=sRange(s), f=s.energy/cap; s.dome.scale.setScalar(R); s.dome.visible=f>0.02;
+      s.dome.material.opacity=0.05+0.12*f+(s.absorbT>0?0.18:0);
+      s.head.rotation.y+=dt*1.5; s.head.position.y=3.9+Math.sin(S.time*2+s.phase)*0.15;
     } else if(s.type==='pump'){
       s.head.position.y=1+Math.abs(Math.sin(S.time*2.2+s.phase))*0.7;
       const inc=Math.round(s.def.income*lvlMul(s,0.6)); pumpIncome+=inc/s.def.rate;
@@ -2776,7 +2847,7 @@ function updateProjectiles(dt){
       } else {
         const t=p.data.target, R=p.data.splash||3;
         for(const st of structures.slice()){ if(st.alive){ const d=cpoint(st,p.tx,p.tz).d; if(d<R) hurtTarget(st,p.data.dmg*(1-0.4*clamp(d/R,0,1))); } }
-        for(const u of units.slice()){ if(u.alive){ const d=Math.hypot(u.x-p.tx,u.z-p.tz)-u.radius; if(d<R) hurtTarget(u,p.data.dmg*(1-0.4*clamp(d/R,0,1))); } }
+        for(const u of units.slice()){ if(u.alive&&!u.def.fly){ const d=Math.hypot(u.x-p.tx,u.z-p.tz)-u.radius; if(d<R) hurtTarget(u,p.data.dmg*(1-0.4*clamp(d/R,0,1))); } }
         if(player.alive){ const d=Math.hypot(player.x-p.tx,player.z-p.tz)-player.radius; if(d<R) hurtTarget(player,p.data.dmg*(1-0.4*clamp(d/R,0,1))); }
         boom(p.tx,p.ty,p.tz,(p.data.splash||3)*0.9,0xff6a3d,0.35); sfx('boom',p.tx,p.tz);
       }
@@ -2787,7 +2858,7 @@ function updateProjectiles(dt){
 // ---------------------------------------------------------------- update: enemies
 function chooseTarget(e){
   const d=e.def;
-  if(d.sapper){
+  if(d.sapper||d.burrow&&e.burrowed){
     // sappers ignore the rover and troops and go for the nearest structure, outposts included
     let best=null,bd=d.aggro; for(const s of structures){ const c=cpoint(s,e.x,e.z).d; if(c<bd){bd=c;best=s;} }
     if(best) return best;
@@ -2795,7 +2866,7 @@ function chooseTarget(e){
     // nearest thing of ours inside aggro range: rover, troops, towers or walls
     let best=null,bd=d.aggro;
     if(player.alive){ const pd=Math.hypot(player.x-e.x,player.z-e.z)-player.radius; if(pd<bd){bd=pd;best=player;} }
-    for(const u of units){ const dd=Math.hypot(u.x-e.x,u.z-e.z)-u.radius; if(dd<bd){bd=dd;best=u;} }
+    for(const u of units){ if(u.def.fly&&d.atk==='melee') continue; const dd=Math.hypot(u.x-e.x,u.z-e.z)-u.radius; if(dd<bd){bd=dd;best=u;} }
     for(const s of structures){ if(s.isSite) continue; const c=cpoint(s,e.x,e.z).d; if(c<bd){bd=c;best=s;} }
     if(best) return best;
   }
@@ -2824,6 +2895,10 @@ function bossBarrage(e){
   for(let k=0;k<3;k++){ const tx=best.x+rand(-4,4), tz=best.z+rand(-4,4), L=Math.hypot(tx-e.x,tz-e.z); fireShell(e.x,H(e.x,e.z)+6,e.z,tx,tz,1.3+L*0.03+k*0.2,8+L*0.3,'foe',{dmg:40*DF().dmg*foeDmgScale(),splash:4,target:best}); }
   sfx('thump',e.x,e.z);
 }
+function surface(e){
+  if(!e.burrowed) return; e.burrowed=false; e.cloaked=false; e.g.visible=true;
+  boom(e.x,H(e.x,e.z)+0.6,e.z,3,0x9a8a70,0.4); shatter(e.x,H(e.x,e.z)+0.5,e.z,5,M.sandTop,1); sfx('thump',e.x,e.z);
+}
 function sapperBlast(e){
   e.dead=true; scene.remove(e.g);
   const R=e.def.blast, dmg=e.def.dmg*DF().dmg*(1+0.08*Math.max(0,effN(Math.max(1,S.wave))-1));
@@ -2841,7 +2916,10 @@ function updateEnemies(dt){
     if(e.dead) continue;
     const d=e.def;
     if(e.stunT>0&&e.def.cloak){ e.revealT=Math.max(e.revealT||0,0.5); }
+    if(e.stunT>0&&e.burrowed){ surface(e); }
     if(e.stunT>0){ e.stunT-=dt; e.walking=false; e.px=e.x; e.pz=e.z; continue; }
+    if(d.carrier){ e.cT-=dt; if(e.cT<=0){ e.cT=d.carrier; for(let k=0;k<3;k++) pendingSpawns.push({t:'wasp',x:e.x+rand(-2,2),z:e.z+rand(-2,2),home:e.home}); sfx('thump',e.x,e.z); } }
+    if(e.burrowed&&e.tgt&&e.tgt!==player){ const cc=cpoint(e.tgt,e.x,e.z); if(cc.d<9) surface(e); }
     e.retarget-=dt;
     if(e.retarget<=0||!e.tgt||(e.tgt!==player&&!e.tgt.alive)||(e.tgt===player&&!player.alive)){ e.retarget=0.4+Math.random()*0.4; e.tgt=chooseTarget(e); }
     const t=e.tgt; if(!t) continue;
@@ -2857,12 +2935,13 @@ function updateEnemies(dt){
       if(e.cd<=0){
         e.cd=d.rate*rand(0.9,1.1);
         const dm=d.dmg*DF().dmg*foeDmgScale();
-        if(d.atk==='blast'){ sapperBlast(e); continue; }
+        if(d.atk==='none'){ }
+        else if(d.atk==='blast'){ sapperBlast(e); continue; }
         else if(d.atk==='shell'){ const fl=1.2+L*0.03; fireShell(e.x,H(e.x,e.z)+2.4,e.z,tx+rand(-1.5,1.5),tz+rand(-1.5,1.5),fl,6+L*0.3,'foe',{dmg:dm,splash:d.splash,target:t}); sfx('thump',e.x,e.z); }
         else if(d.atk==='shot'){
           const ey=H(e.x,e.z)+(d.fly?FLY_H:1.5), moving=(t===player||t.isUnit);
           const miss=moving&&Math.random()<0.2;
-          tracer(e.x,ey,e.z,tx+(miss?rand(-3,3):0),H(tx,tz)+1.2,tz+(miss?rand(-3,3):0),0xff5a3a);
+          tracer(e.x,ey,e.z,tx+(miss?rand(-3,3):0),H(tx,tz)+(t.def&&t.def.fly?FLY_H+1:1.2),tz+(miss?rand(-3,3):0),0xff5a3a);
           if(!miss) hurtTarget(t,dm); sfx('shot',e.x,e.z);
         }
         else { meleeHit(e,t,tx,tz,dm); }
@@ -2880,7 +2959,7 @@ function updateEnemies(dt){
   }
   // collide with structures and the rover, then pose
   for(const e of enemies){ if(e.dead) continue;
-    if(!e.def.fly){
+    if(!e.def.fly&&!e.burrowed){
     for(const s of structures){ const c=cpoint(s,e.x,e.z); if(c.d<e.def.r){ const p=e.def.r-c.d; e.x+=c.nx*p; e.z+=c.nz*p; } }
     for(const u of units){ const dx=e.x-u.x, dz=e.z-u.z, rr=e.def.r+u.radius, d=Math.hypot(dx,dz); if(d<rr&&d>1e-4){ e.x+=dx/d*(rr-d); e.z+=dz/d*(rr-d); } }
     if(player.alive){ const dx=e.x-player.x, dz=e.z-player.z, rr=e.def.r+player.radius, d=Math.hypot(dx,dz); if(d<rr&&d>1e-4){ e.x+=dx/d*(rr-d); e.z+=dz/d*(rr-d); } }
@@ -2894,6 +2973,7 @@ function updateEnemies(dt){
     e.g.rotation.y=e.yaw;
     if(e.flash>0){e.flash-=dt; e.body.scale.setScalar(1.12);} else e.body.scale.setScalar(1);
     e.body.rotation.z=e.def.fly?0:(e.walking?Math.sin(e.bob)*0.06:0);
+    if(e.burrowed){ e.g.visible=false; e.dustT=(e.dustT||0)-dt; if(e.dustT<=0&&e.walking){ e.dustT=0.25; smoke(e.x,H(e.x,e.z)+0.3,e.z,false); } }
     if(e.def.cloak){
       let rev=e.revealT>0; if(e.revealT>0) e.revealT-=dt;
       if(!rev&&player.alive&&Math.hypot(player.x-e.x,player.z-e.z)<12) rev=true;
@@ -2993,7 +3073,7 @@ function hpBar(x,y,z,frac,w,color){
 function drawOverlay(){
   octx.setTransform(DPR,0,0,DPR,0,0); octx.clearRect(0,0,W,Hh);
   if(S.mode==='menu') return;
-  for(const u of units){ if(u.hp<u.maxHp||selUnits.includes(u)) hpBar(u.x,H(u.x,u.z)+u.def.barY,u.z,u.hp/u.maxHp,26,'#5fd1c1'); }
+  for(const u of units){ if(u.hp<u.maxHp||selUnits.includes(u)) hpBar(u.x,H(u.x,u.z)+u.def.barY+(u.def.fly?FLY_H+1:0),u.z,u.hp/u.maxHp,26,'#5fd1c1'); }
   if(boxSel){ octx.strokeStyle='rgba(95,209,193,.9)'; octx.fillStyle='rgba(95,209,193,.12)'; octx.lineWidth=1.5; const x=Math.min(boxSel.x0,boxSel.x1), y=Math.min(boxSel.y0,boxSel.y1), w=Math.abs(boxSel.x1-boxSel.x0), h=Math.abs(boxSel.y1-boxSel.y0); octx.fillRect(x,y,w,h); octx.strokeRect(x,y,w,h); }
   for(const e of enemies){ if(e.cloaked) continue; if(e.hp<e.maxHp||e.type==='boss'||e.type==='juggernaut') hpBar(e.x,H(e.x,e.z)+e.def.barY+(e.def.fly?FLY_H:0),e.z,e.hp/e.maxHp,e.type==='boss'?70:Math.max(22,e.def.r*24),'#e3623f'); }
   for(const s of structures){
