@@ -422,12 +422,18 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="gcols" id="vsPick">
         <div class="gcard">
           <h4>Online match</h4>
-          <p id="vsRoomMsg">Connecting&hellip;</p>
-          <label class="lbl" for="vsNick">Your callsign</label>
-          <input class="vsin" id="vsNick" maxlength="16" autocomplete="off" placeholder="Callsign">
-          <button class="go" id="vsCreate" type="button">Create match</button>
-          <label class="lbl" for="vsCode">Or join a friend's match</label>
-          <div class="vsrow"><input class="vsin" id="vsCode" maxlength="6" autocomplete="off" placeholder="Code"><button class="go alt" id="vsJoin" type="button">Join</button></div>
+          <p id="vsRoomMsg">Connecting to claude.ai multiplayer&hellip;</p>
+          <div id="vsOnlineForm" style="display:grid;gap:8px">
+            <label class="lbl" for="vsNick">Your callsign</label>
+            <input class="vsin" id="vsNick" maxlength="16" autocomplete="off" placeholder="Callsign">
+            <button class="go" id="vsCreate" type="button">Create match</button>
+            <label class="lbl" for="vsCode">Or join a friend's match</label>
+            <div class="vsrow"><input class="vsin" id="vsCode" maxlength="6" autocomplete="off" placeholder="Code"><button class="go alt" id="vsJoin" type="button">Join</button></div>
+          </div>
+          <div id="vsOffline" hidden style="display:grid;gap:10px">
+            <p id="vsOfflineWhy"></p>
+            <a class="go alt" id="vsOpenClaude" href="https://claude.ai/artifact/UF32FVvjWQLQcHuKSoRAxQ" target="_blank" rel="noopener" hidden style="text-decoration:none;justify-self:start">Open the claude.ai version</a>
+          </div>
         </div>
         <div class="gcard">
           <h4>Vs AI commander</h4>
@@ -2053,10 +2059,17 @@ let ROOM=null, MATCH=null, roomTried=false;
 function vsNick(){ const v=($('vsNick').value||'').replace(/[^\w .-]/g,'').trim().slice(0,16); return v||'Commander'; }
 try{ $('vsNick').value=localStorage.getItem('ifv-nick')||''; }catch(e){}
 function seedFrom(str){ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; }
+// Online play needs claude.ai's multiplayer service. Where it is missing, swap the form for a plain explanation instead of dead controls.
 function renderVsPick(){
-  const ok=!!ROOM;
-  $('vsRoomMsg').textContent=(!window.claude&&roomTried)?'Online play is only available in the claude.ai version of this game. Vs AI works here.':ok?'Create a match and send the code to a friend who can open this page. They join with the code.':(roomTried?'Online play needs this page opened on claude.ai while signed in, and shared with your opponent. Vs AI works anywhere.':'Connecting…');
-  ['vsCreate','vsJoin','vsNick','vsCode'].forEach(id=>$(id).disabled=!ok);
+  const ok=!!ROOM, standalone=!window.claude, unavailable=roomTried&&!ok;
+  $('vsOnlineForm').hidden=unavailable;
+  $('vsOffline').hidden=!unavailable;
+  $('vsOpenClaude').hidden=!standalone;
+  $('vsRoomMsg').textContent=ok?'Create a match and send the code to a friend who can open this page. They join with the code.':unavailable?'Online play is not available here.':'Connecting to claude.ai multiplayer…';
+  $('vsOfflineWhy').textContent=standalone
+    ?'Online matches run on claude.ai’s multiplayer service, so they only work in the claude.ai version of this game. Both players need to be signed in to claude.ai, and the page must be shared with your opponent. Vs AI works right here.'
+    :'This view could not connect to claude.ai multiplayer. Open the game on claude.ai in a desktop web browser (Chrome, Edge, Safari or Firefox) while signed in, then reload the page. The mobile app and public links do not support online play. Vs AI works right here.';
+  ['vsCreate','vsJoin','vsCode'].forEach(id=>$(id).disabled=!ok);
 }
 function openVs(){ $('menu').hidden=true; $('vs').hidden=false; $('vsPick').hidden=!!MATCH; $('vsLobby').hidden=!MATCH; renderVsPick(); renderLobby(); }
 $('vsBtn').addEventListener('click',()=>{ initAudio(); openVs(); });
