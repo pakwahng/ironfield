@@ -135,6 +135,25 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .statsGrid b{font-family:var(--display);font-size:28px;font-variant-numeric:tabular-nums}
 #menuMsg{color:var(--hostile);font-size:14px}
 
+#train{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));width:min(420px,calc(100vw - 500px));min-width:280px;padding:12px 16px;display:grid;gap:8px;border-color:rgba(240,178,58,.6)}
+#train .trTop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#train .trStep{font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal)}
+#train h4{margin:0;font-family:var(--display);font-size:20px;letter-spacing:.02em;line-height:1.15;text-wrap:balance}
+#trKeys{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--mute)}
+#trKeys kbd{font-family:var(--display);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 7px;color:var(--fg);background:rgba(255,255,255,.05)}
+#trBar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+#trBar i{display:block;height:100%;width:0;background:var(--signal);transition:width .4s}
+#train .trBtns{display:flex;gap:10px}
+#train .trBtns button{background:none;border:0;padding:0;color:var(--mute);font-family:var(--display);font-size:11px;letter-spacing:.06em;text-decoration:underline}
+#train.done{animation:trDone .6s}
+@keyframes trDone{0%{box-shadow:0 0 0 0 rgba(147,211,108,.8)}100%{box-shadow:0 0 0 18px rgba(147,211,108,0)}}
+.tHL{z-index:5;box-shadow:0 0 0 2px var(--signal),0 0 18px 4px rgba(240,178,58,.55)!important;border-radius:6px;animation:tPulse 1.1s ease-in-out infinite}
+@keyframes tPulse{50%{box-shadow:0 0 0 3px var(--signal),0 0 28px 8px rgba(240,178,58,.75)}}
+#tArrow{position:fixed;width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:18px solid var(--signal);pointer-events:none;z-index:30;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));animation:tBob .8s ease-in-out infinite}
+#tArrow.up{border-top:0;border-bottom:18px solid var(--signal)}
+@keyframes tBob{50%{translate:0 -7px}}
+@media (prefers-reduced-motion:reduce){ .tHL,#tArrow{animation:none} }
+@media (max-width:720px){ #train{top:calc(12px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));transform:none;width:calc(100vw - 176px);min-width:0;padding:9px 11px;gap:6px} #train h4{font-size:15px} #train .trTop{flex-wrap:wrap} #trKeys{font-size:11.5px} #app.training #stats{display:none} }
 #tip{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));width:min(380px,calc(100vw - 520px));padding:10px 14px;display:grid;gap:6px;border-color:rgba(240,178,58,.5)}
 #tip .lbl{display:flex;justify-content:space-between;align-items:center;color:var(--signal)}
 #tip p{margin:0;font-size:13.5px;line-height:1.45}
@@ -327,6 +346,13 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <button id="raidToggle" type="button">Send raid &#9662;</button>
       <div id="raidList"></div>
     </div>
+    <div id="train" class="panel" hidden role="status" aria-live="polite">
+      <div class="trTop"><span class="trStep" id="trStep">Step 1 of 12</span><span class="trBtns"><button id="trSkip" type="button">Skip step</button><button id="trExit" type="button">Exit training</button></span></div>
+      <h4 id="trSay">Drive to the beacon</h4>
+      <div id="trKeys"></div>
+      <div id="trBar"><i id="trBarFill"></i></div>
+    </div>
+    <div id="tArrow" hidden></div>
     <div id="tip" class="panel" hidden><div class="lbl"><span id="tipStep">Tip 1 of 6</span><button id="tipSkip" type="button">Skip tips</button></div><p id="tipText"></p></div>
     <div id="abilBar" class="panel">
       <button class="abil" type="button" data-a="strike"><span class="an">Airstrike</span><span class="ak">Z</span><i class="cdv"></i></button>
@@ -375,7 +401,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="eyebrow">Open-field defence &middot; Sector 7 campaign</div>
       <h1>Ironfield <span>Vanguard</span></h1>
       <p>There are no roads out here. Hostiles cross open ground from every bearing, each column marching on a different site. You drive the only rover in the sector: haul supply, deploy defences where you stand, and race between outposts before the next wave breaks.</p>
-      <div class="btnRow"><button class="go" id="vsBtn" type="button">Versus</button><button class="go alt" id="guideBtn" type="button">How to play</button></div>
+      <div class="btnRow"><button class="go" id="vsBtn" type="button">Versus</button><button class="go alt" id="guideBtn" type="button">How to play</button><button class="go alt" id="manualBtn" type="button">Field manual</button></div>
       <div class="levels" id="levels"></div>
       <div class="opts"><span class="lbl">Difficulty</span><span class="seg" id="diffSeg"><button type="button" data-d="recruit">Recruit</button><button type="button" data-d="regular">Regular</button><button type="button" data-d="veteran">Veteran</button></span><span id="diffNote"></span></div>
       <div class="brief">
@@ -394,7 +420,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div class="sheet" style="justify-items:start">
       <div class="eyebrow">Paused</div>
       <h1>Holding <span>position</span></h1>
-      <div class="btnRow"><button class="go" id="resumeBtn" type="button">Resume</button><button class="go alt" id="pauseGuide" type="button">How to play</button><button class="go alt" id="quitBtn" type="button">Level select</button></div>
+      <div class="btnRow"><button class="go" id="resumeBtn" type="button">Resume</button><button class="go alt" id="pauseGuide" type="button">Field manual</button><button class="go alt" id="quitBtn" type="button">Level select</button></div>
     </div>
   </div>
 
@@ -454,12 +480,12 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
   <div id="guide" class="screen" hidden>
     <div class="sheet">
       <div class="gtop">
-        <div><div class="eyebrow">Field manual</div><h1>How to <span>play</span></h1></div>
+        <div><div class="eyebrow">Reference</div><h1>Field <span>manual</span></h1></div>
         <button class="go" id="guideClose" type="button">Close</button>
       </div>
       <nav class="gnav" id="gNav" aria-label="Guide sections"></nav>
       <div class="gbody" id="gBody"></div>
-      <div class="gfoot"><div class="btnRow"><button class="go alt" id="gPrev" type="button">Previous</button><button class="go alt" id="gNext" type="button">Next</button></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="gNote"></span><button class="go alt" id="tutReset" type="button">Replay Level 1 tips</button></div></div>
+      <div class="gfoot"><div class="btnRow"><button class="go alt" id="gPrev" type="button">Previous</button><button class="go alt" id="gNext" type="button">Next</button></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="gNote"></span><button class="go alt" id="tutReset" type="button">Play the training</button></div></div>
     </div>
   </div>
 
@@ -543,6 +569,10 @@ const LEVELS=[
 ];
 // Endless: the Last Light layout at night, every structure unlocked, waves without end. The enemy HQ rebuilds stronger.
 // Versus arena: mirrored for both players, three sites, no enemy HQ. Neutral waves on a timer, raids from your rival.
+// Boot Camp: a small, calm map for the interactive training. No waves, no enemy HQ; the script spawns every hostile.
+const TRAINDEF={name:'Boot Camp',training:true,blurb:'',towers:['sentry','wall','trooper'],waves:Infinity,off:0,supply:200,allow:1,bosses:[],
+  ter:{ox:600,oz:900,amp:0.6,cA:0x617040,cB:0x8d8152,sky:0x2f3a48},foe:{x:250,z:250},
+  sites:[{name:'Command HQ',x:0,z:30},{name:'Range Post',x:115,z:-85}],spawns:[{a:0,to:0}],k0:1,kStep:9};
 const VSDEF={name:'Crossfire',vs:true,blurb:'',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','trooper','engineer','tank','rocket'],waves:Infinity,off:0,supply:520,allow:1,bosses:[],
   ter:{ox:4100,oz:-3300,amp:1.0,cA:0x5d6a40,cB:0x88804e,sky:0x2e3846},foe:{x:240,z:240},
   sites:[{name:'Command HQ',x:0,z:20},{name:'East Post',x:150,z:-80},{name:'West Post',x:-150,z:-80}],
@@ -1131,7 +1161,7 @@ const S={mode:'menu',lvl:0,supply:0,wave:0,inter:0,queue:[],spawnT:0,spawns:[],n
 let PROG={unlocked:1,stars:{}};
 try{ const raw=localStorage.getItem('ifv-campaign'); if(raw){ const p=JSON.parse(raw); if(p&&p.unlocked) PROG=Object.assign(PROG,p); } }catch(e){}
 function saveProg(){ try{localStorage.setItem('ifv-campaign',JSON.stringify(PROG));}catch(e){} }
-const LV=()=>S.vs?VSDEF:S.endless?ENDLESS:LEVELS[S.lvl];
+const LV=()=>S.training?TRAINDEF:S.vs?VSDEF:S.endless?ENDLESS:LEVELS[S.lvl];
 const focus=new THREE.Vector3(0,0,14);
 let camYaw=0.6, camPitch=0.92, camDist=52, camYawT=0.6, camDistT=52;
 
@@ -1154,15 +1184,15 @@ function addStructure(type,x,z,rot,name){
 }
 
 function setupLevel(i,endless){
-  S.endless=!!endless; S.lvl=(S.vs||endless)?4:i; const L=LV();
+  S.endless=!!endless; S.lvl=S.training?0:(S.vs||endless)?4:i; const L=LV();
   clearWorld(); buildTerrain(L);
   L.sites.forEach((d,k)=>{ const s=addStructure(k===0?'hq':'outpost',d.x,d.z,k===0?0:Math.atan2(d.x,d.z),d.name); if(k===0) hq=s; s.idx=k; });
-  if(!S.vs) buildFoeBase(S.lvl);
+  if(!S.vs&&!S.training) buildFoeBase(S.lvl);
   focus.set(hq.x,0,hq.z);
 }
-function startLevel(i,endless,vs){
+function startLevel(i,endless,vs,training){
   initAudio();
-  S.vs=vs||null;
+  S.vs=vs||null; S.training=!!training; trainStop();
   setupLevel(i,endless); const L=LV();
   Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
   rover=modelRover(); scene.add(rover.g);
@@ -1176,7 +1206,7 @@ function startLevel(i,endless,vs){
   const fresh=S.endless?[]:L.towers.filter(t=>TOWER_LEVEL[t]===i+1&&i>0).map(t=>BUILD[t].name);
   if(!S.endless&&TANK_UNLOCK[i]) fresh.push(TANK_UNLOCK[i]);
   startTutorial();
-  banner((S.endless?'Endless: ':'Level '+(i+1)+': ')+L.name,(fresh.length?'New: '+fresh.join(', ')+'. ':'')+'First contact in 40 s. Enemy HQ lies '+compass(Math.atan2(L.foe.x-hq.x,-(L.foe.z-hq.z)))+'. '+(L.allow?'You can lose '+L.allow+' outpost.':'Hold every site.'),'');
+  if(!S.training) banner((S.endless?'Endless: ':'Level '+(i+1)+': ')+L.name,(fresh.length?'New: '+fresh.join(', ')+'. ':'')+'First contact in 40 s. Enemy HQ lies '+compass(Math.atan2(L.foe.x-hq.x,-(L.foe.z-hq.z)))+'. '+(L.allow?'You can lose '+L.allow+' outpost.':'Hold every site.'),'');
 }
 
 // ---------------------------------------------------------------- waves
@@ -1234,7 +1264,7 @@ const TIPS=[
   {t:'Hostiles attack anything near their path. Press C to repair, V to stun, Z for an airstrike. Space starts the wave early.',done:()=>S.wave>=1},
 ];
 let tipIdx=-1;
-function startTutorial(){ tipIdx=(!S.vs&&!S.endless&&S.lvl===0&&!PROG.tutDone)?0:-1; showTip(); }
+function startTutorial(){ tipIdx=-1; showTip(); } // replaced by the interactive Boot Camp
 function showTip(){ const el=$('tip'); if(tipIdx<0||tipIdx>=TIPS.length){ el.hidden=true; return; } el.hidden=false; $('tipStep').textContent='Tip '+(tipIdx+1)+' of '+TIPS.length; $('tipText').textContent=TIPS[tipIdx].t; }
 function updateTutorial(){ if(tipIdx<0) return; if(S.mode!=='inter'&&S.mode!=='wave'){ $('tip').hidden=true; return; }
   if(TIPS[tipIdx].done()){ tipIdx++; sfx('order'); if(tipIdx>=TIPS.length){ tipIdx=-1; PROG.tutDone=1; saveProg(); } showTip(); } }
@@ -1288,16 +1318,16 @@ function makeFoe(type,x,z,home){
 }
 
 // ---------------------------------------------------------------- crates
-function spawnCrate(minR,maxR){
+function spawnCrate(minR,maxR,fx,fz,val){
   if(crates.length>=7) return;
   const a=Math.random()*TAU, r=rand(minR||45,maxR||MAP-15);
-  const x=clamp(Math.sin(a)*r,-MAP+10,MAP-10), z=clamp(-Math.cos(a)*r,-MAP+10,MAP-10);
+  const x=fx!==undefined?fx:clamp(Math.sin(a)*r,-MAP+10,MAP-10), z=fz!==undefined?fz:clamp(-Math.cos(a)*r,-MAP+10,MAP-10);
   const g=new THREE.Group(); g.position.set(x,H(x,z),z);
   const box=part(G.box,M.amber,1.6,1.2,1.6,0,1,0,g);
   const beam=new THREE.Mesh(G.cyl,new THREE.MeshBasicMaterial({color:COL.signal,transparent:true,opacity:0.18,depthWrite:false}));
   beam.scale.set(0.35,40,0.35); beam.position.y=20; g.add(beam);
   scene.add(g);
-  crates.push({g,box,x,z,value:Math.round(30+r*0.28)});
+  crates.push({g,box,x,z,value:val||Math.round(30+r*0.28)});
 }
 
 // ---------------------------------------------------------------- geometry helpers
@@ -1335,6 +1365,7 @@ function hurtTarget(t,dmg){
   if(t===player){ if(!player.alive) return; player.hp-=dmg; player.lastHit=0; hurtFlash=Math.min(1,hurtFlash+dmg/35); sfx('hit',player.x,player.z); if(player.hp<=0) killPlayer(); return; }
   if(!t.alive) return;
   if(t.isUnit){ t.hp-=dmg; t.hit=0.1; t.lastHit=0; sfx('hit',t.x,t.z); if(t.hp<=0) killUnit(t); return; }
+  if(S.training&&t.isSite){ t.lastHit=0; t.hit=0.12; return; } // sites cannot fall in training
   t.hp-=dmg; t.hit=0.12; sfx('hit',t.x,t.z);
   if(t.isSite){
     t.lastHit=0;
@@ -1369,6 +1400,7 @@ function gameOver(why){
 }
 function starsHtml(n){ let h=''; for(let i=1;i<=3;i++) h+=i<=n?'\u2605':'<i>\u2605</i>'; return h; }
 function winLevel(how){
+  if(S.training) return;
   if(S.mode==='won'||S.mode==='over') return;
   if(S.vs) return;
   $('nextBtn').textContent='Next level'; $('winLvls').textContent='Level select';
@@ -2242,6 +2274,119 @@ function vsRematch(){
   tryStartOnline();
 }
 
+// ---------------------------------------------------------------- interactive training (Boot Camp)
+// Each step: a short prompt, the controls for this device, an on-screen highlight or a beacon in the world, and a check that ends it.
+let trIdx=-1, trBeacon=null, trHL=null, trSpawned=[], trStepT=0, trData={};
+const beaconMat=new THREE.MeshBasicMaterial({color:COL.signal,transparent:true,opacity:0.28,depthWrite:false});
+const trRing=makeRing(COL.signal,0.95); trRing.visible=false;
+const trCol=new THREE.Mesh(G.cyl,beaconMat); trCol.scale.set(0.6,30,0.6); trCol.visible=false; scene.add(trCol);
+const K=(...k)=>k.map(x=>'<kbd>'+x+'</kbd>').join(' ');
+const dev=(desk,touch)=>isTouch?touch:desk;
+function hqP(dx,dz){ return {x:hq.x+dx,z:hq.z+dz}; }
+function trSpawn(type,n,cx,cz,spread,home){ for(let i=0;i<n;i++){ const x=cx+rand(-spread,spread), z=cz+rand(-spread,spread); makeFoe(type,x,z,home||hq); trSpawned.push(enemies[enemies.length-1]); } }
+const trClear=()=>trSpawned.every(e=>e.dead);
+const firstOf=t=>structures.find(st=>st.type===t);
+const TSTEPS=[
+  {say:'Drive to the beacon',keys:()=>dev(K('W','A','S','D')+' drive &nbsp;'+K('Shift')+' boost','Use the joystick, bottom left'),
+   enter(){ trData.p=hqP(32,-38); setBeacon(trData.p.x,trData.p.z,5); },
+   done:()=>Math.hypot(player.x-trData.p.x,player.z-trData.p.z)<6},
+  {say:'Turn the camera',keys:()=>dev(K('Q')+' '+K('E')+' or right-drag &nbsp; wheel to zoom','Tap the round arrows, or drag with one finger'),
+   enter(){ trData.y0=camYaw; setHL(isTouch?'#camBtns':null); },
+   done:()=>Math.abs(camYaw-trData.y0)>0.9},
+  {say:'Grab the supply drop',keys:()=>'Amber beacons are supply. Drive over it.',
+   enter(){ const c=hqP(-42,-48); spawnCrate(0,0,c.x,c.z,80); setBeacon(c.x,c.z,3); },
+   done:()=>(S.crates||0)>=1},
+  {say:'Build a Sentry Gun on the marker',keys:()=>dev(K('1')+' then click inside the teal ring','Tap Sentry Gun, then tap the marker'),
+   enter(){ S.supply=Math.max(S.supply,140); trData.p=hqP(0,-26); setBeacon(trData.p.x,trData.p.z,3,true); setHL('.card[data-type="sentry"]'); },
+   done:()=>!!firstOf('sentry')},
+  {say:'Hold the line',keys:()=>'Four raiders are coming. Your sentry and rover fire on their own.',
+   enter(){ clearCue(); trSpawn('grunt',4,hq.x,hq.z-95,8); banner('Incoming','4 grunts from the north','hostile'); },
+   done:trClear},
+  {say:'Block their path with a Barricade',keys:()=>dev(K('4')+' to pick it &nbsp;'+K('R')+' rotates','Tap Barricade, then tap in front of the sentry'),
+   enter(){ S.supply=Math.max(S.supply,60); const st=firstOf('sentry')||hq; trData.p={x:st.x,z:st.z-9}; setBeacon(trData.p.x,trData.p.z,4.5,true); setHL('.card[data-type="wall"]'); },
+   done:()=>!!firstOf('wall')},
+  {say:'Deploy a Rifle Squad',keys:()=>dev(K('9')+' then click near the rover','Tap Rifle Squad, then tap near the rover'),
+   enter(){ S.supply=Math.max(S.supply,70); clearBeacon(); setHL('.card[data-type="trooper"]'); },
+   done:()=>units.length>=1},
+  {say:'Send your squad to the beacon',keys:()=>dev('Click the squad (or drag a box), then right-click the beacon','Tap the squad, then tap the beacon'),
+   enter(){ setHL(null); trData.p=hqP(-30,-12); setBeacon(trData.p.x,trData.p.z,4); },
+   done:()=>units.some(u=>Math.hypot(u.x-trData.p.x,u.z-trData.p.z)<6)},
+  {say:'Fix the damage with a Repair pulse',keys:()=>dev(K('C')+' or click the button','Tap Repair pulse'),
+   enter(){ clearBeacon(); for(const st of structures) if(!st.isSite) st.hp=st.maxHp*0.35; S.cd.pulse=0; const st=firstOf('sentry'); if(st){ player.x=st.x+4; player.z=st.z+8; } setHL('.abil[data-a="pulse"]'); },
+   done:()=>S.cd.pulse>0},
+  {say:'Call an airstrike on the pack',keys:()=>dev(K('Z')+' then click on the enemies','Tap Airstrike, then tap the enemies'),
+   enter(){ S.cd.strike=0; trData.p=hqP(70,-70); trSpawn('runner',8,trData.p.x,trData.p.z,4); for(const e of trSpawned.slice(-8)) e.stunT=999; setBeacon(trData.p.x,trData.p.z,9); setHL('.abil[data-a="strike"]'); focusOn(trData.p); },
+   done:()=>S.cd.strike>0&&S.strikes.length===0,
+   leave(){ for(const e of enemies) if(e.stunT>100) e.stunT=0; }},
+  {say:'Upgrade your Sentry Gun',keys:()=>dev('Click the sentry, then Upgrade (or press '+K('U')+')','Tap the sentry, then tap Upgrade'),
+   enter(){ S.supply=Math.max(S.supply,100); clearBeacon(); const st=firstOf('sentry'); if(st){ setBeacon(st.x,st.z,3); player.x=st.x+5; player.z=st.z+9; } setHL(null); },
+   tick(){ setHL(S.sel&&S.sel.type==='sentry'?'#upBtn':null); },
+   done:()=>{ const st=firstOf('sentry'); return !st||st.level>=2; }},
+  {say:'Range Post is under attack. Go!',keys:()=>'Red dashed lines on the sector map show where raids head. Drive there, build, and clear them.',
+   enter(){ S.supply=Math.max(S.supply,160); const rp=sites[1]; trSpawn('grunt',5,rp.x+70,rp.z-60,6,rp); trSpawn('runner',3,rp.x+75,rp.z-50,6,rp); setBeacon(rp.x,rp.z,8); setHL('#mmWrap'); banner('Range Post under attack','Use the sector map to find it.','hostile'); },
+   done:trClear},
+];
+function setBeacon(x,z,r,build){ trBeacon={x,z,r,build}; trRing.visible=true; setRing(trRing,x,z,r); trCol.visible=true; trCol.position.set(x,H(x,z)+15,z); trCol.scale.set(build?0.25:0.6,30,build?0.25:0.6); }
+function clearBeacon(){ trBeacon=null; trRing.visible=false; trCol.visible=false; }
+function setHL(sel){ if(trHL===sel) return; document.querySelectorAll('.tHL').forEach(e=>e.classList.remove('tHL')); trHL=sel; if(sel){ const el=document.querySelector(sel); if(el){ el.classList.add('tHL'); if(el.closest('#tray')) el.scrollIntoView({block:'nearest',inline:'center'}); } } }
+function clearCue(){ clearBeacon(); setHL(null); }
+function focusOn(p){ /* nudge the view toward a far target so it shows on screen */ camYawT=Math.atan2(player.x-p.x,player.z-p.z); }
+function startTraining(){
+  initAudio(); ['menu','guide','pause','vs'].forEach(id=>$(id).hidden=true);
+  startLevel(0,false,null,true);
+  Object.assign(S,{mode:'wave',supply:200,queue:[]});
+  trIdx=-1; trSpawned=[]; trData={}; $('app').classList.add('training'); $('train').hidden=false; $('tip').hidden=true; $('help').hidden=true; $('helpBtn').hidden=true;
+  if(!isTouch) banner('Boot Camp','Learn by doing. Follow the card at the top.','');
+  trNext();
+}
+function trNext(){
+  const prev=TSTEPS[trIdx]; if(prev&&prev.leave) prev.leave();
+  trIdx++; trStepT=0;
+  if(trIdx>=TSTEPS.length){ trFinish(); return; }
+  const st=TSTEPS[trIdx]; setHL(null); st.enter();
+  $('trStep').textContent='Step '+(trIdx+1)+' of '+TSTEPS.length; $('trSay').textContent=st.say; $('trKeys').innerHTML=st.keys();
+  $('trBarFill').style.width=(trIdx/TSTEPS.length*100)+'%';
+}
+function updateTraining(dt){
+  if(trIdx<0||trIdx>=TSTEPS.length) return;
+  if(S.queue.length){ S.spawnT-=dt; while(S.spawnT<=0&&S.queue.length){ const q=S.queue.shift(); spawnFoe(q.t,q.sp); S.spawnT+=0.4; } }
+  const st=TSTEPS[trIdx]; trStepT+=dt; if(st.tick) st.tick();
+  if(trStepT>0.4&&st.done()){ sfx('clear'); const c=$('train'); c.classList.remove('done'); void c.offsetWidth; c.classList.add('done'); floatText(player.x,H(player.x,player.z)+4,player.z,'Done',COL.ok); trNext(); }
+}
+function trFinish(){
+  clearCue(); $('train').hidden=true; $('trBarFill').style.width='100%';
+  PROG.trained=1; saveProg(); S.mode='won'; setBuild(null); select(null);
+  $('wLevel').textContent='Boot Camp complete'; $('bigStars').innerHTML='';
+  $('wNote').textContent='You can drive, build, fight, command troops, use abilities and defend a distant site. Level 1 is next. The Field manual has every number if you want the detail.';
+  $('wSites').textContent=sites.length+' / '+sites.length; $('wKills').textContent=S.kills; $('wBuilt').textContent=S.built; $('wTime').textContent=fmtTime(S.time);
+  $('nextBtn').hidden=false; $('nextBtn').textContent='Start Level 1'; $('winLvls').textContent='Back to menu';
+  banner('Training complete','','good');
+  setTimeout(()=>{ if(S.mode==='won'){ $('win').hidden=false; $('hud').hidden=true; } },1200);
+}
+function trainStop(){ const ap=document.getElementById('app'); if(ap) ap.classList.remove('training'); const wasOn=trIdx>=0; trIdx=-1; clearCue(); if(wasOn&&typeof renderHelp==='function') renderHelp(); const t=document.getElementById('train'); if(t) t.hidden=true; const a=document.getElementById('tArrow'); if(a) a.hidden=true; }
+$('trSkip').addEventListener('click',e=>{ e.currentTarget.blur(); if(S.training&&trIdx>=0) trNext(); });
+$('trExit').addEventListener('click',e=>{ e.currentTarget.blur(); showMenu(); });
+// arrow that points at the highlighted control, and a label or edge marker for the beacon
+const tArrow=$('tArrow');
+function placeArrow(){
+  if(!S.training||!trHL||S.paused){ if(!tArrow.hidden) tArrow.hidden=true; return; }
+  const el=document.querySelector(trHL); if(!el){ tArrow.hidden=true; return; }
+  const r=el.getBoundingClientRect(); if(!r.width){ tArrow.hidden=true; return; }
+  const up=r.top<70; tArrow.classList.toggle('up',up); tArrow.hidden=false;
+  tArrow.style.left=(r.left+r.width/2-13)+'px'; tArrow.style.top=(up?r.bottom+8:r.top-26)+'px';
+}
+function drawTrainCue(){
+  if(!S.training||!trBeacon) return;
+  const b=trBeacon, p=proj(b.x,H(b.x,b.z)+(b.build?3:6),b.z);
+  octx.font='700 13px "Chakra Petch", system-ui, sans-serif'; octx.textAlign='center'; octx.lineWidth=3; octx.strokeStyle='rgba(10,14,18,.85)'; octx.fillStyle='#f0b23a';
+  if(p&&p.x>0&&p.x<W&&p.y>0&&p.y<Hh){ const t=b.build?'Build here':'Here'; octx.strokeText(t,p.x,p.y); octx.fillText(t,p.x,p.y); return; }
+  const cy=Math.cos(camYaw), sy=Math.sin(camYaw), dx=b.x-focus.x, dz=b.z-focus.z;
+  let vx=dx*cy-dz*sy, vy=dx*sy+dz*cy; const L=Math.hypot(vx,vy)||1; vx/=L; vy/=L;
+  const mx=W/2-50, my=Hh/2-50, t=Math.min(Math.abs(mx/(vx||1e-6)),Math.abs(my/(vy||1e-6))), ax=W/2+vx*t, ay=Hh/2+vy*t;
+  octx.save(); octx.translate(ax,ay); octx.rotate(Math.atan2(vy,vx)); octx.beginPath(); octx.moveTo(16,0); octx.lineTo(-7,-11); octx.lineTo(-7,11); octx.closePath(); octx.fill(); octx.restore();
+  const lbl=Math.round(Math.hypot(b.x-player.x,b.z-player.z))+' m'; octx.strokeText(lbl,ax-vx*30,ay-vy*26+4); octx.fillText(lbl,ax-vx*30,ay-vy*26+4);
+}
+
 // ---------------------------------------------------------------- how-to-play guide
 // Tables read the live game data, so costs, ranges and unlock levels always match the game.
 const kb=k=>'<kbd>'+k+'</kbd>';
@@ -2399,12 +2544,13 @@ function renderGuide(){
 }
 function openGuide(from){ gFrom=from; $('gNote').textContent=''; renderGuide(); $('guide').hidden=false; if(from==='pause') $('pause').hidden=true; else $('menu').hidden=true; }
 function closeGuide(){ $('guide').hidden=true; if(gFrom==='pause'&&S.paused) $('pause').hidden=false; else if(S.mode==='menu') $('menu').hidden=false; }
-$('guideBtn').addEventListener('click',()=>openGuide('menu'));
+$('guideBtn').addEventListener('click',()=>startTraining());
+$('manualBtn').addEventListener('click',()=>openGuide('menu'));
 $('pauseGuide').addEventListener('click',()=>openGuide('pause'));
 $('guideClose').addEventListener('click',closeGuide);
 $('gPrev').addEventListener('click',()=>{ if(gIdx>0){ gIdx--; renderGuide(); } });
 $('gNext').addEventListener('click',()=>{ if(gIdx<GUIDE.length-1){ gIdx++; renderGuide(); } });
-$('tutReset').addEventListener('click',()=>{ PROG.tutDone=0; saveProg(); $('gNote').textContent='Tips will show next time you start Level 1.'; });
+$('tutReset').addEventListener('click',()=>{ $('guide').hidden=true; S.paused=false; $('pause').hidden=true; startTraining(); });
 window.addEventListener('keydown',e=>{ if($('guide').hidden) return; if(e.code==='Escape'){ e.stopImmediatePropagation(); closeGuide(); } else if(e.code==='ArrowRight'&&gIdx<GUIDE.length-1){ gIdx++; renderGuide(); } else if(e.code==='ArrowLeft'&&gIdx>0){ gIdx--; renderGuide(); } },true);
 function togglePause(){ if(S.mode!=='inter'&&S.mode!=='wave') return; if(!$('guide').hidden) return; S.paused=!S.paused; $('pause').hidden=!S.paused; }
 function toggleSpeed(){ OPT.speed=OPT.speed===1?2:1; saveOpt(); renderSpeed(); }
@@ -2426,9 +2572,10 @@ $('muteBtn').addEventListener('click',e=>{e.currentTarget.blur(); initAudio(); t
 renderSound();
 $('resumeBtn').addEventListener('click',togglePause);
 $('againBtn').addEventListener('click',()=>{ if(S.vs) vsRematch(); else startLevel(S.lvl,S.endless); });
-$('nextBtn').addEventListener('click',()=>{ if(S.vs) vsRematch(); else startLevel(Math.min(S.lvl+1,LEVELS.length-1)); });
+$('nextBtn').addEventListener('click',()=>{ if(S.training){ startLevel(0); return; } if(S.vs) vsRematch(); else startLevel(Math.min(S.lvl+1,LEVELS.length-1)); });
 ['overLvls','winLvls','quitBtn'].forEach(id=>$(id).addEventListener('click',()=>{ const wasVs=S.vs; showMenu(); if(wasVs==='online') vsLeave(); }));
 function showMenu(){
+  S.training=false; trainStop();
   tipIdx=-1; $('tip').hidden=true; $('raidPanel').hidden=true; $('vs').hidden=true;
   S.mode='menu'; S.paused=false; setBuild(null); select(null);
   ['over','pause','win'].forEach(id=>$(id).hidden=true); $('hud').hidden=true; $('menu').hidden=false;
@@ -2780,13 +2927,14 @@ function updateFx(dt){
 
 function updateGame(dt){
   S.time+=dt;
-  if(S.vs) updateVs(dt);
+  if(S.training) updateTraining(dt);
+  else if(S.vs) updateVs(dt);
   else if(S.mode==='inter'){ S.inter-=dt; if(S.inter<=0) startWave(false); }
   else if(S.mode==='wave'){
     if(S.queue.length){ S.spawnT-=dt; while(S.spawnT<=0&&S.queue.length){ const q=S.queue.shift(); spawnFoe(q.t,q.sp); S.spawnT+=S.spawnInterval; } }
     else if(enemies.length===0) waveCleared();
   }
-  S.crateT-=dt; if(S.crateT<=0){ S.crateT=rand(9,15); spawnCrate(); }
+  if(!S.training){ S.crateT-=dt; if(S.crateT<=0){ S.crateT=rand(9,15); spawnCrate(); } }
   S.supply+=dt*1.0; // trickle from HQ
   updateAbilities(dt); updatePlayer(dt); updateStructures(dt); updateUnits(dt); updateFoeBase(dt); updateEnemies(dt); updateProjectiles(dt);
   if(pendingSpawns.length){ const ps=pendingSpawns; pendingSpawns=[]; ps.forEach(q=>makeFoe(q.t,q.x,q.z,q.home)); }
@@ -2859,7 +3007,7 @@ function drawOverlay(){
     octx.strokeStyle='rgba(10,14,18,.85)'; octx.lineWidth=3; octx.strokeText(f.text,p.x,p.y); octx.fillText(f.text,p.x,p.y);
   }
   octx.globalAlpha=1;
-  drawSiteMarkers();
+  drawSiteMarkers(); drawTrainCue();
   if(ghostPt&&S.build){
     const p=proj(ghostPt.x,H(ghostPt.x,ghostPt.z)+5,ghostPt.z);
     if(p){ const d=BUILD[S.build]; const txt=ghostWhy||(d.name+' \u00b7 '+d.cost+(S.build==='wall'?' \u00b7 R to rotate':''));
@@ -2986,8 +3134,9 @@ function updateHud(){
   setText('income','+'+(1.0+pumpIncome).toFixed(1)+'/s');
   setText('unitCount','Units '+units.length+'/'+UNIT_CAP);
   const lb=$('launchBtn');
-  $('foeTxt').parentElement.parentElement.hidden=!!S.vs;
-  if(S.vs){
+  $('foeTxt').parentElement.parentElement.hidden=!!(S.vs||S.training);
+  if(S.training){ setText('lvlNo','Training'); setText('waveNum',(trIdx+1)+' / '+TSTEPS.length); setText('statusTxt','Follow the training card at the top.'); lb.hidden=true; }
+  else if(S.vs){
     setText('lvlNo',S.vs==='ai'?'Vs AI':'Online'); setText('waveNum',String(S.wave));
     setText('income','+'+(1.0+pumpIncome+S.vsInc).toFixed(1)+'/s');
     setText('statusTxt','Neutral wave '+(S.wave+1)+' in '+Math.ceil(S.vsT)+' s. Hostiles on the field: '+(enemies.length+S.queue.length)+'.'); lb.hidden=true;
@@ -3012,6 +3161,7 @@ function frame(now){
   else if(S.mode==='over'||S.mode==='won'){ updateEnemies(dt*0.5); }
   if(!S.paused){ updateFx(dt*(playing?OPT.speed:1)); }
   updateCamera(S.paused?0:dt);
+  placeArrow();
   updateMusic();
   updateGhostAndRings();
   renderer.render(scene,camera);
@@ -3022,7 +3172,7 @@ requestAnimationFrame(frame);
 
 // a little life behind the title screen
 function menuDressing(i){
-  S.vs=null;
+  S.vs=null; S.training=false; trainStop();
   setupLevel(i,false); const L=LV();
   const spots=[[14,-10,'sentry'],[-16,8,'mortar'],[8,18,'frost'],[-6,-20,'pump']];
   spots.forEach(([x,z,t])=>{ if(L.towers.includes(t)) addStructure(t,hq.x+x,hq.z+z,0); });

@@ -11,7 +11,7 @@ A hard 3D open-field defence game that runs in the browser. Drive your rover acr
 - Versus against an AI commander
 - Twelve structures and units, including tanks that improve on higher levels
 - Rover abilities: airstrike, repair pulse and EMP
-- Built-in How to play guide
+- Interactive Boot Camp training, plus a Field manual for reference
 - Keyboard, mouse and touch controls
 
 ## Running it
