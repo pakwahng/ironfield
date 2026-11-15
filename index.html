@@ -207,6 +207,20 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .seg button.on{background:rgba(95,209,193,.16);color:var(--ally)}
 #diffNote{font-size:12.5px;color:var(--mute)}
 #contBtn{background:var(--signal);color:#1c1406}
+#tmRow{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+#tmRow button{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:4px;padding:5px 2px;font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.03em;color:var(--mute)}
+#tmRow button.on{border-color:var(--ally);color:var(--ally);background:rgba(95,209,193,.12)}
+.site{cursor:pointer}
+.site:hover span{color:var(--ally)}
+#lookChip{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));display:flex;gap:10px;align-items:center;padding:7px 8px 7px 14px;font-family:var(--display);font-size:13px;letter-spacing:.04em;z-index:6}
+#lookChip button{background:var(--ally);color:#0c1a18;border:0;border-radius:4px;padding:5px 10px;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.06em}
+.report{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.report .mvp{font-size:15px}
+.report .mvp b{font-family:var(--display);color:var(--signal)}
+.report .split{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.report .split div{display:grid;gap:1px}
+.report .split b{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+@media (max-width:720px){ .report .split{grid-template-columns:repeat(2,1fr)} }
 #toast{position:absolute;left:50%;transform:translate(-50%,10px);bottom:calc(186px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center;padding:10px 16px 10px 12px;border-color:rgba(240,178,58,.6);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:20}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 .medalDisc{flex:0 0 auto;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:19px;color:#1c1406;background:radial-gradient(circle at 35% 30%,#ffe3a0,var(--signal) 60%,#a8741c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
@@ -352,6 +366,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="lbl"><span>Sector map</span><span style="display:flex;gap:4px"><button id="speedBtn" type="button" title="Game speed (F)">1&times;</button><button id="muteBtn" type="button">Sound on</button></span></div>
     </div>
 
+    <div id="lookChip" class="panel" hidden><span id="lookName">Viewing</span><button id="lookBack" type="button">Back to rover</button></div>
     <div id="raidPanel" class="panel" hidden>
       <div class="lbl"><span id="oppName">Rival</span><span id="oppHq">HQ 100%</span></div>
       <div class="bar"><i id="oppBar" style="background:var(--hostile)"></i></div>
@@ -378,6 +393,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <h3><span id="selName">Sentry Gun</span><span class="pips" id="selPips"></span></h3>
       <div id="selStats"></div>
       <div id="selNote"></div>
+      <div id="tmWrap" hidden><div class="lbl" style="margin-bottom:4px">Target</div><div id="tmRow"><button type="button" data-m="near">Nearest</button><button type="button" data-m="strong">Toughest</button><button type="button" data-m="first">Near base</button><button type="button" data-m="air">Flyers</button></div></div>
       <div id="selBtns"><button id="upBtn" type="button">Upgrade</button><button id="sellBtn" type="button">Sell</button></div>
     </div>
 
@@ -392,7 +408,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <b>Q E</b> / right-drag turn view &nbsp; <b>Wheel</b> zoom<br>
       <b>1-9</b> structures &nbsp; <b>0 - = [ ]</b> units<br>
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
-      <b>Right-click</b> cancel placing<br>
+      <b>Right-click</b> cancel placing &nbsp; <b>T</b> rebuild ruins<br>
       <b>Drag</b> box-select units &nbsp; <b>Tab</b> all units<br>
       <b>Right-click</b> move units &nbsp; <b>G</b> follow rover<br>
       <b>U</b> upgrade (towers or units) &nbsp; <b>X</b> sell or dismiss<br>
@@ -441,6 +457,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div class="sheet" style="justify-items:start">
       <div class="eyebrow">Paused</div>
       <h1>Holding <span>position</span></h1>
+      <div class="opts"><span class="lbl">Graphics</span><span class="seg gfxSegAny"><button type="button" data-g="high">High</button><button type="button" data-g="medium">Medium</button><button type="button" data-g="low">Low</button></span><button class="go alt" id="pauseSound" type="button" style="padding:7px 12px;font-size:12px">Sound</button><button class="go alt" id="pauseSpeed" type="button" style="padding:7px 12px;font-size:12px">Speed</button></div>
       <div class="btnRow"><button class="go" id="resumeBtn" type="button">Resume</button><button class="go alt" id="pauseGuide" type="button">Field manual</button><button class="go alt" id="quitBtn" type="button">Level select</button></div>
     </div>
   </div>
@@ -455,6 +472,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
         <div><span class="lbl">Built</span><b id="oBuilt">0</b></div>
         <div><span class="lbl">Time</span><b id="oTime">0:00</b></div>
       </div>
+      <div class="report" id="oReport"></div>
       <div class="btnRow"><button class="go" id="againBtn" type="button">Retry</button><button class="go alt" id="overLvls" type="button">Level select</button></div>
     </div>
   </div>
@@ -516,6 +534,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <h1>Sector <span>secured</span></h1>
       <div id="bigStars"></div>
       <p id="wNote"></p>
+      <div class="report" id="wReport"></div>
       <div class="statsGrid">
         <div><span class="lbl">Sites held</span><b id="wSites">0</b></div>
         <div><span class="lbl">Hostiles down</span><b id="wKills">0</b></div>
@@ -1279,6 +1298,7 @@ const focus=new THREE.Vector3(0,0,14);
 let camYaw=0.6, camPitch=0.92, camDist=52, camYawT=0.6, camDistT=52;
 
 function clearWorld(){
+  if(S.ruins) clearRuins();
   structures.forEach(s=>{ scene.remove(s.g); if(s.dome) scene.remove(s.dome); }); enemies.forEach(e=>scene.remove(e.g)); projectiles.forEach(p=>scene.remove(p.m)); crates.forEach(c=>scene.remove(c.g));
   fx.forEach(f=>{scene.remove(f.m);f.m.material.dispose();});
   structures=[]; enemies=[]; projectiles=[]; crates=[]; sites=[]; fx.length=0; floats.length=0;
@@ -1345,7 +1365,7 @@ function saveGame(){
   const sv={v:1,lvl:S.lvl,endless:!!S.endless,diff:OPT.diff,wave:S.wave,supply:Math.floor(S.supply),lost:S.lost,kills:S.kills,built:S.built,time:Math.floor(S.time),
     rebuildAt:S.rebuildAt||0,rebuilds:S.rebuilds||0,
     sites:sites.map(st=>({alive:st.alive,hp:Math.round(st.hp)})),
-    structs:structures.filter(st=>!st.isSite).map(st=>({t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
+    structs:structures.filter(st=>!st.isSite).map(st=>({tm:st.tmode||null,t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
     units:units.map(u=>({t:u.type,x:+u.x.toFixed(1),z:+u.z.toFixed(1),k:u.rank,hp:Math.round(u.hp),sp:u.spent,m:u.mode,px:+u.postX.toFixed(1),pz:+u.postZ.toFixed(1)})),
     foe:foeCore?{coreDead:!!foeCore.dead,parts:foeStructs.filter(f=>!f.dead).map(f=>({i:f.idx,hp:Math.round(f.hp)}))}:null};
   try{ localStorage.setItem(SAVE_KEY,JSON.stringify(sv)); }catch(e){}
@@ -1360,7 +1380,7 @@ function continueGame(){
   restoring=true; startLevel(sv.lvl,sv.endless); restoring=false;
   Object.assign(S,{wave:sv.wave,supply:sv.supply,lost:sv.lost,kills:sv.kills,built:sv.built,time:sv.time,mode:'inter',inter:25,rebuildAt:sv.rebuildAt,rebuilds:sv.rebuilds});
   sv.sites.forEach((d,i)=>{ const st=sites[i]; if(!st) return; if(!d.alive){ st.alive=false; scene.remove(st.g); structures=structures.filter(o=>o!==st); } else st.hp=Math.min(st.maxHp,d.hp); });
-  sv.structs.forEach(d=>{ if(!BUILD[d.t]||BUILD[d.t].unit) return; const st=addStructure(d.t,d.x,d.z,d.r); st.level=d.l||1; st.spent=d.sp||st.spent;
+  sv.structs.forEach(d=>{ if(!BUILD[d.t]||BUILD[d.t].unit) return; const st=addStructure(d.t,d.x,d.z,d.r); st.level=d.l||1; st.spent=d.sp||st.spent; if(d.tm) st.tmode=d.tm;
     if(st.level>1){ st.maxHp=Math.round(st.def.hp*lvlMul(st,0.35)); st.g.scale.setScalar(1+0.09*(st.level-1)); } st.hp=Math.min(st.maxHp,d.hp); });
   restoring=true;
   sv.units.forEach(d=>{ if(!BUILD[d.t]||!BUILD[d.t].unit) return; const u=addUnit(d.t,d.x,d.z); u.rank=d.k||1; u.spent=d.sp||u.spent;
@@ -1383,7 +1403,7 @@ function startLevel(i,endless,vs,training){
   setupLevel(i,endless); const L=LV();
   Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
   rover=modelRover(); scene.add(rover.g);
-  Object.assign(player,{x:hq.x,z:hq.z+14,vx:0,vz:0,yaw:0,hp:player.maxHp,alive:true,respawn:0,cd:0,tgt:null,lastHit:99});
+  Object.assign(player,{x:hq.x,z:hq.z+14,vx:0,vz:0,yaw:0,hp:player.maxHp,alive:true,respawn:0,cd:0,tgt:null,lastHit:99,kills:0}); S.kcat={}; S.ruins=[]; S.look=null;
   focus.set(player.x,0,player.z);
   for(let k=0;k<3;k++) spawnCrate(40,140);
   S.nextSpawns=pickSpawns();
@@ -1543,6 +1563,7 @@ function hurtEnemy(e,dmg,pierce,small){
   if(e.dead) return; if(e.burrowed) surface(e); if(small&&e.def.armour) dmg*=e.def.armour; if(e.def.cloak) e.revealT=2.5; if(!pierce&&e.warded>0) dmg*=0.5; e.hp-=dmg; e.flash=0.08;
   if(e.hp<=0){
     e.dead=true; S.kills++; S.supply+=e.def.reward;
+    if(curSrc){ curSrc.kills=(curSrc.kills||0)+1; const cat=curSrc===player?'rover':curSrc.isUnit?'units':curSrc.ability?'abilities':'defences'; S.kcat=S.kcat||{}; S.kcat[cat]=(S.kcat[cat]||0)+1; }
     shatter(e.x,y0Of(e),e.z,e.type==='boss'?14:e.def.r>1.2?7:4,e.type==='boss'?M.boss:M.foe,Math.max(1,e.def.r*1.4));
     if(e.def.brood) for(let k=0;k<e.def.brood;k++) pendingSpawns.push({t:'mite',x:e.x+rand(-1.6,1.6),z:e.z+rand(-1.6,1.6),home:e.home});
     const y=H(e.x,e.z);
@@ -1570,7 +1591,31 @@ function hurtTarget(t,dmg){
   }
   if(t.hp<=0) destroyStructure(t);
 }
+// Ruins: a destroyed tower leaves a marker. Click it, or press T, to rebuild everything in reach.
+const ruinGeo=new THREE.CylinderGeometry(1,1,0.12,12), ruinMat=new THREE.MeshBasicMaterial({color:0x5fd1c1,transparent:true,opacity:0.28,depthWrite:false});
+function addRuin(s){
+  if(S.training||S.vs===undefined&&false) return;
+  S.ruins=S.ruins||[]; if(S.ruins.length>=24){ const old=S.ruins.shift(); scene.remove(old.m); }
+  const m=new THREE.Mesh(ruinGeo,ruinMat); const r=s.type==='wall'?2:s.def.radius+0.6; m.scale.set(r,1,r); m.position.set(s.x,H(s.x,s.z)+0.15,s.z); scene.add(m);
+  S.ruins.push({type:s.type,x:s.x,z:s.z,rot:s.rot||0,m});
+}
+function clearRuins(){ (S.ruins||[]).forEach(r=>scene.remove(r.m)); S.ruins=[]; }
+function rebuildRuin(r,quiet){
+  const def=BUILD[r.type]; if(!def||!unlocked(r.type)) return false;
+  if(S.supply<def.cost){ if(!quiet){ sfx('deny'); floatText(r.x,H(r.x,r.z)+2,r.z,'Need '+def.cost+' supply',COL.hostile); } return false; }
+  const why=placeCheck(r.type,r.x,r.z,r.rot);
+  if(why){ if(!quiet){ sfx('deny'); floatText(r.x,H(r.x,r.z)+2,r.z,why,COL.hostile); } return false; }
+  S.supply-=def.cost; S.built++; const st=addStructure(r.type,r.x,r.z,r.rot); boom(st.x,H(st.x,st.z)+0.5,st.z,3,COL.ally,0.35);
+  scene.remove(r.m); S.ruins=S.ruins.filter(o=>o!==r); return true;
+}
+function rebuildAll(){
+  const near=(S.ruins||[]).filter(r=>Math.hypot(r.x-player.x,r.z-player.z)<=BUILD_R).sort((a,b)=>BUILD[a.type].cost-BUILD[b.type].cost);
+  if(!near.length){ sfx('deny'); floatText(player.x,H(player.x,player.z)+4,player.z,'No ruins within '+BUILD_R+' m',COL.signal); return; }
+  let n=0; for(const r of near) if(rebuildRuin(r,true)) n++;
+  if(n){ sfx('build'); floatText(player.x,H(player.x,player.z)+4,player.z,'Rebuilt '+n,COL.ally); } else { sfx('deny'); floatText(player.x,H(player.x,player.z)+4,player.z,'Not enough supply',COL.hostile); }
+}
 function destroyStructure(s){
+  if(!s.isSite&&BUILD[s.type]&&(S.mode==='inter'||S.mode==='wave')) addRuin(s);
   s.alive=false; scene.remove(s.g); if(s.dome){ scene.remove(s.dome); s.dome.geometry.dispose(); } shatter(s.x,H(s.x,s.z)+1.5,s.z,s.isSite?18:8,s.isSite?M.hullDark:M.hull,s.isSite?3:1.6);
   boom(s.x,H(s.x,s.z)+1.5,s.z,s.isSite?14:5,0xffb060,s.isSite?1.2:0.6); sfx('boom',s.x,s.z);
   structures=structures.filter(o=>o!==s);
@@ -1593,8 +1638,20 @@ function gameOver(why){
   $('againBtn').textContent='Retry'; $('overLvls').textContent='Level select';
   S.mode='over'; setBuild(null); select(null); sfx('lost');
   $('oWhy').textContent=why+' \u00b7 '+(S.endless?'Endless, best '+(PROG.endlessBest||0)+' waves':'Level '+(S.lvl+1)+', '+LV().name);
+  $('oReport').innerHTML=reportHtml();
   $('oWave').textContent=Math.max(0,S.wave-1); $('oKills').textContent=S.kills; $('oBuilt').textContent=S.built; $('oTime').textContent=fmtTime(S.time);
   setTimeout(()=>{ if(S.mode==='over'){ $('over').hidden=false; $('hud').hidden=true; } },1400);
+}
+function reportHtml(){
+  const k=S.kcat||{}; let mvp=null;
+  for(const c of structures.concat(units)){ if(!c.isSite&&(c.kills||0)>(mvp?mvp.kills:0)) mvp=c; }
+  if((player.kills||0)>(mvp?mvp.kills:0)) mvp=player;
+  let near='';
+  if(mvp&&mvp!==player&&!mvp.isUnit){ let bd=1e9; for(const st of sites){ const d=Math.hypot(st.x-mvp.x,st.z-mvp.z); if(d<bd){bd=d;near=st.name;} } }
+  const name=!mvp?'':mvp===player?'Your rover':(mvp.def.name+(mvp.isUnit&&mvp.rank>1?' (rank '+mvp.rank+')':(!mvp.isUnit&&mvp.level>1?' (level '+mvp.level+')':''))+(near?' near '+near:''));
+  const cell=(l,v)=>'<div><span class="lbl">'+l+'</span><b>'+(v||0)+'</b></div>';
+  return (mvp?'<div class="mvp">Most valuable: <b>'+name.replace(/</g,'')+'</b> with '+mvp.kills+' kill'+(mvp.kills===1?'':'s')+'</div>':'<div class="mvp">No kills recorded.</div>')+
+    '<div class="split">'+cell('Defences',k.defences)+cell('Units',k.units)+cell('Rover',k.rover)+cell('Abilities',k.abilities)+'</div>';
 }
 function starsHtml(n){ let h=''; for(let i=1;i<=3;i++) h+=i<=n?'\u2605':'<i>\u2605</i>'; return h; }
 function winLevel(how){
@@ -1615,6 +1672,7 @@ function winLevel(how){
   const newT=next?next.towers.filter(t=>!L.towers.includes(t)).map(t=>BUILD[t].name):[];
   $('wNote').textContent=last?'The campaign is won. Every site in Sector 7 is in friendly hands. Replay any level to chase three stars.':
     'Next up: '+next.name+'. '+(newT.length?'Unlocked: '+newT.join(', ')+'.':'')+' Three stars means no sites lost and the HQ above half.';
+  $('wReport').innerHTML=reportHtml();
   $('wSites').textContent=held+' / '+total; $('wKills').textContent=S.kills; $('wBuilt').textContent=S.built; $('wTime').textContent=fmtTime(S.time);
   $('nextBtn').hidden=last;
   banner('Sector secured','','good');
@@ -1895,12 +1953,13 @@ function updateUnits(dt){
       if(!moving) u.yaw=angLerp(u.yaw,want,dt*5);
       u.head.rotation.y=angLerp(u.head.rotation.y,want-u.yaw,dt*10);
       if(u.cd<=0){
-        u.cd=d.rate;
+        u.cd=d.rate; curSrc=u;
         if(u.type==='rocket'){ const ty=tY(t); tracer(u.x,y+1.7,u.z,t.x,ty,t.z,0xffb060); boom(t.x,ty,t.z,1.8,0xffa040,0.25); const heavy=t.def&&(t.def.armour||t.type==='boss'||t.type==='brute'||t.isFoe); hurtHostile(t,uDmg(u)*(heavy?1.5:1)); sfx('thump',u.x,u.z); }
         else if(u.type==='tank'){ const dist=Math.hypot(t.x-u.x,t.z-u.z), a=u.yaw+u.head.rotation.y, ox=Math.cos(a)*0.4, oz=-Math.sin(a)*0.4;
-          for(const sd of (d.twin?[-1,1]:[0])) fireShell(u.x+ox*sd,y+1.7,u.z+oz*sd,t.x+t.vx*0.3+rand(-0.6,0.6)*Math.abs(sd),t.z+t.vz*0.3+rand(-0.6,0.6)*Math.abs(sd),0.25+dist*0.012+(sd>0?0.06:0),1.5,'ally',{dmg:uDmg(u),splash:d.splash});
+          for(const sd of (d.twin?[-1,1]:[0])) fireShell(u.x+ox*sd,y+1.7,u.z+oz*sd,t.x+t.vx*0.3+rand(-0.6,0.6)*Math.abs(sd),t.z+t.vz*0.3+rand(-0.6,0.6)*Math.abs(sd),0.25+dist*0.012+(sd>0?0.06:0),1.5,'ally',{dmg:uDmg(u),splash:d.splash,src:u});
           sfx('thump',u.x,u.z); }
         else { tracer(u.x,y+(d.fly?FLY_H+0.6:1.3),u.z,t.x+rand(-0.3,0.3),tY(t),t.z+rand(-0.3,0.3),u.type==='engineer'?0xc8f0a8:0xffe2a0); hurtHostile(t,uDmg(u),true); sfx('shot',u.x,u.z); }
+        curSrc=null;
       }
     } else { u.cd=Math.max(0,u.cd); u.head.rotation.y=angLerp(u.head.rotation.y,0,dt*3); }
     if(d.coax){ u.cd2=(u.cd2||0)-dt; if(u.cd2<=0){ const m=nearestEnemy(u.x,u.z,d.coax.range,0,0); if(m){ u.cd2=d.coax.rate; tracer(u.x,y+2.4,u.z,m.x+rand(-0.3,0.3),tY(m),m.z+rand(-0.3,0.3),0xffe2a0); hurtEnemy(m,d.coax.dmg*(1+0.35*(u.rank-1)),false,true); sfx('shot',u.x,u.z); } else u.cd2=0.2; } }
@@ -2004,9 +2063,9 @@ function updateAbilities(dt){
       st.acc-=0.12; const o=(st.n-2.5)*3.4, bx=st.x+st.dx*o, bz=st.z+st.dz*o, by=H(bx,bz);
       tracer(bx-st.dx*30,by+70,bz-st.dz*30,bx,by+1,bz,0xffd9a0);
       boom(bx,by+1.5,bz,6,0xffa040,0.6); sfx('boom',bx,bz);
-      const dmg=130*(1+0.15*S.lvl);
+      const dmg=130*(1+0.15*S.lvl); curSrc=STRIKE_SRC;
       for(const e of enemies){ if(!e.dead&&Math.hypot(e.x-bx,e.z-bz)<4.8+e.def.r){ hurtEnemy(e,dmg); if(e.dead) st.kills=(st.kills||0)+1; } }
-      if((st.kills||0)>=10&&!S.training) award('airsupport');
+      curSrc=null; if((st.kills||0)>=10&&!S.training) award('airsupport');
       for(const f of foeStructs){ if(!f.dead&&cpoint(f,bx,bz).d<4.8) hurtFoe(f,dmg*0.8); }
       st.n++;
     }
@@ -2032,7 +2091,7 @@ mm.addEventListener('pointerdown',e=>{
   const x=clamp(((e.clientX-r.left)/r.width*mm.width-half)/sc,-MAP,MAP), z=clamp(((e.clientY-r.top)/r.height*mm.height-half)/sc,-MAP,MAP);
   if(S.aiming) useAbility('strike',x,z);
   else if(selUnits.length) orderMove(x,z);
-  else floatText(player.x,H(player.x,player.z)+4,player.z,'Select units first, then click the map to send them',COL.signal);
+  else lookAt(x,z,'the map');
 });
 
 // ---------------------------------------------------------------- input
@@ -2104,6 +2163,7 @@ window.addEventListener('keydown',e=>{
   else if(k==='KeyG') toggleFollow();
   else if(k==='KeyF') toggleSpeed();
   else if(k==='KeyH') toggleHelp();
+  else if(k==='KeyT') rebuildAll();
   else if(k==='KeyP') togglePause();
   else if(k==='KeyR'){ S.rot=(S.rot+Math.PI/4)%TAU; }
   else if(k==='Space'){ e.preventDefault(); if(S.mode==='inter'&&!S.paused) startWave(true); }
@@ -2184,6 +2244,8 @@ function clickAt(ndc,sc){
   let best=null,bd=3;
   for(const s of structures){ const d=cpoint(s,p.x,p.z).d; if(d<bd){bd=d;best=s;} }
   if(selUnits.length) setUnitSel([]);
+  if(!best){ let rb=null,rd=3; for(const r of (S.ruins||[])){ const d=Math.hypot(r.x-p.x,r.z-p.z); if(d<rd){rd=d;rb=r;} }
+    if(rb){ if(Math.hypot(rb.x-player.x,rb.z-player.z)>BUILD_R){ sfx('deny'); floatText(rb.x,H(rb.x,rb.z)+2,rb.z,'Drive within '+BUILD_R+' m to rebuild',COL.signal); } else if(rebuildRuin(rb)) sfx('build'); return; } }
   if(!best) for(const f of foeStructs){ if(f.dead) continue; const d=cpoint(f,p.x,p.z).d; if(d<bd){bd=d;best=f;} }
   select(best);
 }
@@ -2207,12 +2269,14 @@ function doSell(){
   s.alive=false; scene.remove(s.g); if(s.dome){ scene.remove(s.dome); s.dome.geometry.dispose(); } structures=structures.filter(o=>o!==s); select(null); sfx('pickup');
 }
 $('upBtn').addEventListener('click',doUpgrade);
+document.querySelectorAll('#tmRow button').forEach(b=>b.addEventListener('click',()=>{ b.blur(); const s=S.sel; if(!s||!TM_TYPES.includes(s.type)) return; s.tmode=b.dataset.m; s.scan=0; sfx('order'); refreshSel(true); }));
 $('sellBtn').addEventListener('click',doSell);
 
 let selCache='';
 function refreshSel(force){
   const s=S.sel; if(!s) return;
   if(s.isFoe){
+    $('tmWrap').hidden=true;
     if(s.dead){ select(null); return; }
     const lines=['Hull <b>'+Math.ceil(s.hp)+' / '+s.maxHp+'</b>'];
     if(s.kind==='core') lines.push(shielded()?'<b>Shielded</b>: takes no damage':'Armour soaks <b>40%</b> of each hit');
@@ -2227,7 +2291,7 @@ function refreshSel(force){
   const d=s.def, lines=[];
   lines.push('Hull <b>'+Math.ceil(s.hp)+' / '+s.maxHp+'</b>');
   if(s.type==='flak') lines.push('Hits <b>flying</b> hostiles only');
-  if(s.type==='rail') lines.push('Targets the <b>toughest</b> hostile in range');
+  if(!s.isSite&&!s.isFoe&&(s.kills||0)>0) lines.push('Kills <b>'+s.kills+'</b>');
   if(s.type==='tesla') lines.push('Chains to <b>'+(s.def.chain+s.level-1)+'</b> targets, pierces Warden fields');
   if(s.type==='shield') lines.push('Shield <b>'+Math.round(s.energy||0)+' / '+Math.round(s.def.cap*(1+0.5*(s.level-1)))+'</b> &middot; dome <b>'+sRange(s).toFixed(0)+' m</b>');
   if(['sentry','mortar','frost','tesla','flak','rail'].includes(s.type)) lines.push('Range <b>'+sRange(s).toFixed(0)+' m</b> &middot; Damage <b>'+sDmg(s).toFixed(0)+'</b>');
@@ -2240,13 +2304,15 @@ function refreshSel(force){
   if(s.isSite) lines.push('Light gun: <b>'+(s.isHQ?20:17)+' m</b> range. It will not hold the site alone.');
   const reach=inReach(s), canUp=!s.isSite&&s.level<3;
   const note=s.isSite?'Park the rover nearby to repair it.':(!reach?'Drive within '+BUILD_R+' m to modify.':'');
-  const key=[s.type,s.level,Math.ceil(s.hp),s.maxHp,reach,S.supply>=upCost(s)].join('|');
+  const key=[s.type,s.level,Math.ceil(s.hp),s.maxHp,reach,S.supply>=upCost(s),s.tmode,s.kills||0].join('|');
   if(!force&&key===selCache) return; selCache=key;
   $('selName').textContent=s.name;
   $('selPips').innerHTML=s.isSite?'':[1,2,3].map(i=>'<i class="'+(i<=s.level?'on':'')+'"></i>').join('');
   $('selStats').innerHTML=lines.join('<br>');
   $('selNote').textContent=note; $('selNote').hidden=!note;
   $('selBtns').hidden=s.isSite;
+  const tmOn=TM_TYPES.includes(s.type); $('tmWrap').hidden=!tmOn;
+  if(tmOn){ const mode=s.tmode||(s.type==='rail'?'strong':'near'); document.querySelectorAll('#tmRow button').forEach(b=>{ b.classList.toggle('on',b.dataset.m===mode); b.hidden=(b.dataset.m==='air'&&s.type==='mortar'); }); }
   const up=$('upBtn'), sell=$('sellBtn');
   up.textContent=canUp?'Upgrade · '+upCost(s):'Max level';
   up.disabled=!canUp||!reach||S.supply<upCost(s);
@@ -2505,6 +2571,7 @@ function vsEnd(won,why){
   if(S.mode==='won'||S.mode==='over') return;
   S.mode=won?'won':'over'; setBuild(null); select(null); sfx(won?'clear':'lost');
   if(won) award('duelist');
+  $('wReport').innerHTML=reportHtml(); $('oReport').innerHTML=reportHtml();
   if(MATCH&&S.vs==='online'){ MATCH.running=false; MATCH.ready=false; MATCH.room.presence({lost:won?null:true,ready:false,inMatch:false}).catch(()=>{}); }
   const opp=S.vs==='ai'?'the AI commander':String(MATCH&&MATCH.opp&&MATCH.opp.presence.nick||'your rival').slice(0,16);
   if(won){
@@ -2614,7 +2681,7 @@ function updateTraining(dt){
 function trFinish(){
   clearCue(); $('train').hidden=true; $('trBarFill').style.width='100%';
   PROG.trained=1; saveProg(); award('recruit'); S.mode='won'; setBuild(null); select(null);
-  $('wLevel').textContent='Boot Camp complete'; $('bigStars').innerHTML='';
+  $('wLevel').textContent='Boot Camp complete'; $('bigStars').innerHTML=''; $('wReport').innerHTML=reportHtml();
   $('wNote').textContent='You can drive, build, fight, command troops, use abilities and defend a distant site. Level 1 is next. The Field manual has every number if you want the detail.';
   $('wSites').textContent=sites.length+' / '+sites.length; $('wKills').textContent=S.kills; $('wBuilt').textContent=S.built; $('wTime').textContent=fmtTime(S.time);
   $('nextBtn').hidden=false; $('nextBtn').textContent='Start Level 1'; $('winLvls').textContent='Back to menu';
@@ -2832,9 +2899,13 @@ function applyGfx(){
   sun.castShadow=g.shadow>0;
   if(g.shadow&&sun.shadow.mapSize.x!==g.shadow){ sun.shadow.mapSize.set(g.shadow,g.shadow); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } }
   resize(); setWeather(curWeather); starField.visible=curNight&&OPT.gfx!=='low';
-  document.querySelectorAll('#gfxSeg button').forEach(b=>b.classList.toggle('on',b.dataset.g===OPT.gfx));
+  document.querySelectorAll('#gfxSeg button,.gfxSegAny button').forEach(b=>b.classList.toggle('on',b.dataset.g===OPT.gfx));
+  const ps=document.getElementById('pauseSound'), pp=document.getElementById('pauseSpeed'); if(ps) ps.textContent=SOUND_LABEL_P[OPT.sound]||'Sound: all'; if(pp) pp.textContent='Speed '+OPT.speed+'\u00d7';
 }
-document.querySelectorAll('#gfxSeg button').forEach(b=>b.addEventListener('click',()=>{ OPT.gfx=b.dataset.g; saveOpt(); applyGfx(); }));
+const SOUND_LABEL_P={all:'Sound: all',fx:'Effects only',off:'Muted'};
+document.querySelectorAll('#gfxSeg button,.gfxSegAny button').forEach(b=>b.addEventListener('click',()=>{ OPT.gfx=b.dataset.g; saveOpt(); applyGfx(); }));
+$('pauseSound').addEventListener('click',e=>{ e.currentTarget.blur(); initAudio(); toggleMute(); applyGfx(); });
+$('pauseSpeed').addEventListener('click',e=>{ e.currentTarget.blur(); toggleSpeed(); applyGfx(); });
 renderSpeed(); renderHelp(); renderOpts(); applyGfx(); setTimeout(()=>{ try{ renderContinue(); }catch(e){} },0);
 const SOUND_NEXT={all:'fx',fx:'off',off:'all'}, SOUND_LABEL={all:'Sound: all',fx:'Effects only',off:'Muted'};
 function toggleMute(){ OPT.sound=SOUND_NEXT[OPT.sound]||'all'; saveOpt(); renderSound(); }
@@ -2846,6 +2917,7 @@ $('againBtn').addEventListener('click',()=>{ if(S.vs) vsRematch(); else startLev
 $('nextBtn').addEventListener('click',()=>{ if(S.training){ startLevel(0); return; } if(S.vs) vsRematch(); else startLevel(Math.min(S.lvl+1,LEVELS.length-1)); });
 ['overLvls','winLvls','quitBtn'].forEach(id=>$(id).addEventListener('click',()=>{ const wasVs=S.vs; showMenu(); if(wasVs==='online') vsLeave(); }));
 function showMenu(){
+  if(typeof endLook==='function'){ S.look=null; const lc=document.getElementById('lookChip'); if(lc) lc.hidden=true; }
   setTimeout(renderContinue,0); clearTimeout(bannerTimer); $('banner').className='';
   S.training=false; trainStop();
   tipIdx=-1; $('tip').hidden=true; $('raidPanel').hidden=true; $('vs').hidden=true;
@@ -2889,6 +2961,7 @@ function updatePlayer(dt){
   if(keys.KeyW||keys.ArrowUp) iy+=1; if(keys.KeyS||keys.ArrowDown) iy-=1;
   if(keys.KeyD||keys.ArrowRight) ix+=1; if(keys.KeyA||keys.ArrowLeft) ix-=1;
   ix+=joy.x; iy-=joy.y;
+  if(S.look&&(ix||iy)) endLook();
   const L=Math.hypot(ix,iy); if(L>1){ix/=L;iy/=L;}
   const SPEED=(keys.ShiftLeft||keys.ShiftRight||boostHold)?38:24, mx=(rx*ix+fx_*iy)*SPEED, mz=(rz*ix+fz*iy)*SPEED;
   const k=1-Math.exp(-dt*5); player.vx+=(mx-player.vx)*k; player.vz+=(mz-player.vz)*k;
@@ -2915,7 +2988,7 @@ function updatePlayer(dt){
     player.cd-=dt;
     if(player.cd<=0){
       player.cd=0.22; const yy=y+2.2;
-      tracer(player.x,yy,player.z,t.x,tY(t),t.z,COL.ally); hurtHostile(t,8,true); sfx('pshot',player.x,player.z);
+      tracer(player.x,yy,player.z,t.x,tY(t),t.z,COL.ally); curSrc=player; hurtHostile(t,8,true); curSrc=null; sfx('pshot',player.x,player.z);
     }
   } else { player.cd=Math.max(0,player.cd-dt); rover.head.rotation.y=angLerp(rover.head.rotation.y,0,dt*3); }
   // crates
@@ -2930,9 +3003,28 @@ function updatePlayer(dt){
 
 // ---------------------------------------------------------------- update: structures
 let pumpIncome=0;
+// Targeting modes: near (closest to the tower), strong (most health), first (closest to the site it is heading for), air (flyers first).
+const TM_TYPES=['sentry','mortar','tesla','rail'];
+function towerTarget(s,range,minRange,ground){
+  const mode=s.tmode||(s.type==='rail'?'strong':'near'), R2=range*range, mn=(minRange||0)*(minRange||0);
+  let best=null, score=Infinity;
+  for(const e of enemies){
+    if(e.dead||e.cloaked) continue; if(ground&&e.def.fly) continue;
+    const dx=e.x-s.x, dz=e.z-s.z, d2=dx*dx+dz*dz; if(d2>R2||d2<mn) continue;
+    let sc=d2;
+    if(mode==='strong') sc=-e.hp;
+    else if(mode==='first'){ const h=e.home&&e.home.alive?e.home:hq; sc=h?Math.hypot(e.x-h.x,e.z-h.z):d2; }
+    else if(mode==='air') sc=(e.def.fly?0:1e7)+d2;
+    if(sc<score){ score=sc; best=e; }
+  }
+  return best||nearestHostile(s.x,s.z,range,minRange,ground?1:0);
+}
+let curSrc=null;
+const STRIKE_SRC={ability:true,name:'Airstrike'};   // who is dealing damage right now, for kill credit
 function updateStructures(dt){
   pumpIncome=0;
   for(const s of structures){
+    curSrc=s;
     if(s.hit>0){s.hit-=dt; const k=1+0.09*(s.level-1); s.g.scale.setScalar(k*(1+Math.max(0,s.hit)*0.4));}
     const y=H(s.x,s.z);
     if(s.isSite){
@@ -2944,7 +3036,7 @@ function updateStructures(dt){
       continue;
     }
     if(s.type==='sentry'){
-      s.scan-=dt; if(s.scan<=0){s.scan=0.2; s.tgt=nearestHostile(s.x,s.z,sRange(s));}
+      s.scan-=dt; if(s.scan<=0){s.scan=0.2; s.tgt=towerTarget(s,sRange(s),0,false);}
       const t=s.tgt; s.cd-=dt;
       if(t&&!t.dead){
         s.head.rotation.y=angLerp(s.head.rotation.y,yawTo(t.x-s.x,t.z-s.z),dt*14);
@@ -2956,7 +3048,7 @@ function updateStructures(dt){
         }
       } else s.cd=Math.max(0,s.cd);
     } else if(s.type==='mortar'){
-      s.scan-=dt; if(s.scan<=0){s.scan=0.3; s.tgt=nearestHostile(s.x,s.z,sRange(s),s.def.minRange,1);}
+      s.scan-=dt; if(s.scan<=0){s.scan=0.3; s.tgt=towerTarget(s,sRange(s),s.def.minRange,true);}
       const t=s.tgt; s.cd-=dt;
       if(t&&!t.dead){
         s.head.rotation.y=angLerp(s.head.rotation.y,yawTo(t.x-s.x,t.z-s.z),dt*5);
@@ -2964,7 +3056,7 @@ function updateStructures(dt){
           s.cd=s.def.rate;
           const dist=Math.hypot(t.x-s.x,t.z-s.z), dur=0.8+dist*0.03;
           const tx=t.x+t.vx*dur, tz=t.z+t.vz*dur;
-          fireShell(s.x,y+2.5,s.z,tx,tz,dur,8+dist*0.25,'ally',{dmg:sDmg(s),splash:s.def.splash});
+          fireShell(s.x,y+2.5,s.z,tx,tz,dur,8+dist*0.25,'ally',{dmg:sDmg(s),splash:s.def.splash,src:s});
           sfx('thump',s.x,s.z);
         }
       }
@@ -2980,7 +3072,7 @@ function updateStructures(dt){
       s.head.rotation.y+=dt*3; s.head.position.y=5.2+Math.sin(S.time*5+s.phase)*0.12;
       s.cd-=dt;
       if(s.cd<=0){
-        const first=nearestEnemy(s.x,s.z,sRange(s),0,0);
+        const first0=towerTarget(s,sRange(s),0,false), first=first0&&!first0.isFoe?first0:null;
         if(first){
           s.cd=s.def.rate; const hit=[first], dmg=sDmg(s); let cur=first, px=s.x, py=y+5.2, pz=s.z;
           for(let k=0;k<s.def.chain+(s.level-1);k++){
@@ -2995,9 +3087,7 @@ function updateStructures(dt){
       }
     } else if(s.type==='rail'){
       s.scan-=dt;
-      if(s.scan<=0){ s.scan=0.4; let best=null,bh=0; const R2=sRange(s)*sRange(s);
-        for(const e of enemies){ if(e.dead||e.cloaked) continue; const dx=e.x-s.x,dz=e.z-s.z; if(dx*dx+dz*dz<R2&&e.hp>bh){bh=e.hp;best=e;} }
-        s.tgt=best||nearestHostile(s.x,s.z,sRange(s),0,1); }
+      if(s.scan<=0){ s.scan=0.4; s.tgt=towerTarget(s,sRange(s),0,false); }
       const t=s.tgt; s.cd-=dt;
       if(t&&!t.dead){
         s.head.rotation.y=angLerp(s.head.rotation.y,yawTo(t.x-s.x,t.z-s.z),dt*4);
@@ -3033,6 +3123,7 @@ function updateStructures(dt){
       s.cd-=dt; if(s.cd<=0){ s.cd=s.def.rate; S.supply+=inc; floatText(s.x,y+4,s.z,'+'+inc,COL.signal); }
     }
   }
+  curSrc=null;
   // rover repairs
   if(player.alive){
     for(const s of structures){ if(s.hp<s.maxHp&&cpoint(s,player.x,player.z).d<(s.isSite?REPAIR_R+6:REPAIR_R)){ s.hp=Math.min(s.maxHp,s.hp+(s.isSite?14:8)*dt); s.repairing=0.2; } }
@@ -3051,10 +3142,10 @@ function updateProjectiles(dt){
     if(k>=1){
       scene.remove(p.m); projectiles.splice(i,1);
       if(p.side==='ally'){
-        const R=p.data.splash;
+        const R=p.data.splash; curSrc=p.data.src||null;
         for(const e of enemies){ if(e.dead||e.def.fly) continue; const d=Math.hypot(e.x-p.tx,e.z-p.tz); if(d<R+e.def.r) hurtEnemy(e,p.data.dmg*(1-0.5*clamp(d/R,0,1))); }
         for(const f of foeStructs){ if(f.dead) continue; const d=Math.max(0,cpoint(f,p.tx,p.tz).d); if(d<R) hurtFoe(f,p.data.dmg*(1-0.5*clamp(d/R,0,1))); }
-        boom(p.tx,p.ty,p.tz,R*0.9,0xffb04a,0.45); sfx('boom',p.tx,p.tz);
+        boom(p.tx,p.ty,p.tz,R*0.9,0xffb04a,0.45); sfx('boom',p.tx,p.tz); curSrc=null;
       } else {
         const t=p.data.target, R=p.data.splash||3;
         for(const st of structures.slice()){ if(st.alive){ const d=cpoint(st,p.tx,p.tz).d; if(d<R) hurtTarget(st,p.data.dmg*(1-0.4*clamp(d/R,0,1))); } }
@@ -3238,6 +3329,7 @@ function updateCamera(dt){
   camYaw+=(camYawT-camYaw)*(1-Math.exp(-dt*10));
   camDist+=(camDistT-camDist)*(1-Math.exp(-dt*8));
   if(S.mode==='menu'){ camYawT+=dt*0.06; if(hq) focus.set(hq.x,0,hq.z); }
+  else if(S.look){ const k=1-Math.exp(-dt*5); focus.x+=(S.look.x-focus.x)*k; focus.z+=(S.look.z-focus.z)*k; }
   else if(player.alive){ const k=1-Math.exp(-dt*8); focus.x+=(player.x-focus.x)*k; focus.z+=(player.z-focus.z)*k; }
   focus.y=H(focus.x,focus.z);
   const d=S.mode==='menu'?95:camDist, p=S.mode==='menu'?0.62:camPitch;
@@ -3299,6 +3391,9 @@ function drawOverlay(){
   }
   octx.globalAlpha=1;
   drawSiteMarkers(); drawTrainCue();
+  if(S.ruins&&S.ruins.length&&player.alive){ octx.font='600 11px "Chakra Petch", system-ui, sans-serif'; octx.textAlign='center'; octx.lineWidth=3; octx.strokeStyle='rgba(10,14,18,.85)';
+    for(const r of S.ruins){ if(Math.hypot(r.x-player.x,r.z-player.z)>BUILD_R+20) continue; const q=proj(r.x,H(r.x,r.z)+1.2,r.z); if(!q) continue;
+      const t=(isTouch?'Tap':'Click')+' to rebuild \u00b7 '+BUILD[r.type].cost; octx.fillStyle=S.supply>=BUILD[r.type].cost?'#5fd1c1':'#94a2a7'; octx.strokeText(t,q.x,q.y); octx.fillText(t,q.x,q.y); } }
   if(ghostPt&&S.build){
     const p=proj(ghostPt.x,H(ghostPt.x,ghostPt.z)+5,ghostPt.z);
     if(p){ const d=BUILD[S.build]; const txt=ghostWhy||(d.name+' \u00b7 '+d.cost+(S.build==='wall'?' \u00b7 R to rotate':'')+(isTouch?'':' \u00b7 right-click to cancel'));
@@ -3394,11 +3489,15 @@ function drawMinimap(){
 const hudCache={};
 function setText(id,v){ if(hudCache[id]!==v){ hudCache[id]=v; $(id).textContent=v; } }
 let siteRows=[];
+function lookAt(x,z,name){ if(!(S.mode==='inter'||S.mode==='wave')) return; S.look={x,z}; $('lookName').textContent='Viewing '+name; $('lookChip').hidden=false; }
+function endLook(){ if(!S.look) return; S.look=null; $('lookChip').hidden=true; }
+$('lookBack').addEventListener('click',e=>{ e.currentTarget.blur(); endLook(); });
 function buildSiteList(){
   const box=$('sites'); box.innerHTML=''; siteRows=[];
   for(const s of sites){
     const row=document.createElement('div'); row.className='site';
-    row.innerHTML='<span></span><div class="bar"><i></i></div>'; row.firstChild.textContent=s.name;
+    row.innerHTML='<span></span><div class="bar"><i></i></div>'; row.firstChild.textContent=s.name; row.title='Look at '+s.name;
+    row.addEventListener('click',()=>{ if(s.alive) lookAt(s.x,s.z,s.name); });
     box.appendChild(row); siteRows.push({row,bar:row.querySelector('i'),s,state:''});
   }
   for(const k in hudCache) delete hudCache[k];
