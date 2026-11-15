@@ -379,6 +379,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <b>Q E</b> / right-drag turn view &nbsp; <b>Wheel</b> zoom<br>
       <b>1-9</b> structures &nbsp; <b>0 - = [ ]</b> units<br>
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
+      <b>Right-click</b> cancel placing<br>
       <b>Drag</b> box-select units &nbsp; <b>Tab</b> all units<br>
       <b>Right-click</b> move units &nbsp; <b>G</b> follow rover<br>
       <b>U</b> upgrade (towers or units) &nbsp; <b>X</b> sell or dismiss<br>
@@ -1827,7 +1828,7 @@ function useAbility(k,x,z){
   if(!player.alive){ sfx('deny'); floatText(hq.x,H(hq.x,hq.z)+14,hq.z,'Abilities need the rover',COL.hostile); return; }
   if(S.cd[k]>0){ sfx('deny'); return; }
   if(k==='strike'){
-    if(x===undefined){ S.aiming=!S.aiming; if(S.aiming){ setBuild(null); banner('Airstrike ready',isTouch?'Tap the ground or the sector map to call it in.':'Click the ground or the sector map to call it in. Esc cancels.',''); } return; }
+    if(x===undefined){ S.aiming=!S.aiming; if(S.aiming){ setBuild(null); banner('Airstrike ready',isTouch?'Tap the ground or the sector map to call it in.':'Click the ground or the sector map to call it in. Right-click or Esc cancels.',''); } return; }
     S.aiming=false; S.cd.strike=ABIL.strike.cd;
     const a=camYaw+Math.PI/2; S.strikes.push({x,z,dx:Math.sin(a),dz:Math.cos(a),t:-1.4,n:0,acc:0});
     pulse(x,z,ABIL.strike.radius,0xff8a3a); sfx('alarm');
@@ -1928,7 +1929,12 @@ glCanvas.addEventListener('pointerup',e=>{
       if(drag.moved&&boxSel){ const got=unitsInBox(boxSel); if(got.length||!drag.shift) setUnitSel(got,drag.shift); }
       else { mouseNDC=ndcFrom(e); clickAt(mouseNDC,{x:e.clientX,y:e.clientY,shift:drag.shift}); }
     }
-    else if(drag.right&&!drag.moved&&selUnits.length&&(S.mode==='inter'||S.mode==='wave')){ const p=pickGround(ndcFrom(e)); if(p) orderMove(p.x,p.z); }
+    else if(drag.right&&!drag.moved&&(S.mode==='inter'||S.mode==='wave')){
+      if(S.build){ setBuild(null); }
+      else if(S.aiming){ S.aiming=false; }
+      else if(selUnits.length){ const p=pickGround(ndcFrom(e)); if(p) orderMove(p.x,p.z); }
+      else if(S.sel){ select(null); }
+    }
     boxSel=null; drag=null;
   }
 });
@@ -2524,7 +2530,7 @@ const GUIDE=[
         <li>${kb('W')}${kb('A')}${kb('S')}${kb('D')} drive, ${kb('Shift')} boost</li>
         <li>${kb('Q')} ${kb('E')} or right-drag to turn the view, wheel to zoom</li>
         <li>${kb('1')} to ${kb('9')} pick a structure, ${kb('0')} ${kb('-')} ${kb('=')} ${kb('[')} ${kb(']')} pick a unit</li>
-        <li>Click inside the teal ring to deploy. ${kb('R')} rotates a barricade</li>
+        <li>Click inside the teal ring to deploy. ${kb('R')} rotates a barricade. Right-click or ${kb('Esc')} cancels</li>
         <li>Click a structure to inspect, ${kb('U')} upgrade, ${kb('X')} sell</li>
         <li>Click or drag a box to select units, ${kb('Tab')} selects all</li>
         <li>Right-click ground or click the sector map to send units</li>
@@ -3130,7 +3136,7 @@ function drawOverlay(){
   drawSiteMarkers(); drawTrainCue();
   if(ghostPt&&S.build){
     const p=proj(ghostPt.x,H(ghostPt.x,ghostPt.z)+5,ghostPt.z);
-    if(p){ const d=BUILD[S.build]; const txt=ghostWhy||(d.name+' \u00b7 '+d.cost+(S.build==='wall'?' \u00b7 R to rotate':''));
+    if(p){ const d=BUILD[S.build]; const txt=ghostWhy||(d.name+' \u00b7 '+d.cost+(S.build==='wall'?' \u00b7 R to rotate':'')+(isTouch?'':' \u00b7 right-click to cancel'));
       octx.font='600 12px "Chakra Petch", system-ui, sans-serif'; octx.fillStyle=ghostWhy?'#e3623f':'#e7e9e2'; octx.strokeStyle='rgba(10,14,18,.85)'; octx.lineWidth=3;
       octx.strokeText(txt,p.x,p.y); octx.fillText(txt,p.x,p.y); }
   }
