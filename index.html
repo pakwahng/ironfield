@@ -2146,7 +2146,47 @@ const RAIDS=[
 ];
 const VS_GAP=45, RAID_DELAY=6, INC_PER=0.004;
 let ROOM=null, MATCH=null, roomTried=false;
-(window.claude&&window.claude.use?window.claude.use('room'):Promise.resolve(null)).then(r=>{ ROOM=r; roomTried=true; renderVsPick(); }).catch(()=>{ roomTried=true; renderVsPick(); });
+// Outside claude.ai, online play goes through the games.pak.id.au relay (a Cloudflare Worker).
+// makeRelay() offers the same join / presence / peers / onPeers calls as claude.ai's room, so the match code is shared.
+const RELAY_URL=(()=>{ const h=location.hostname;
+  if(/(^|\.)pak\.id\.au$/.test(h)||/\.github\.io$/.test(h)) return 'wss://games.pak.id.au/api/room/';
+  if(h==='localhost'||h==='127.0.0.1') return (location.protocol==='https:'?'wss://':'ws://')+location.host+'/api/room/';
+  return null; })();
+function makeRelay(base){
+  return {relay:true, join(name){ return new Promise((resolve,reject)=>{
+    let ws=null, me=null, closed=false, settled=false, tries=0;
+    const pres={}, peers=new Map(), subs=[]; let snap=Object.freeze([]);
+    const rebuild=()=>{ snap=Object.freeze([...peers.values()].map(p=>Object.freeze({peer:p.peer,by:null,isMe:p.peer===me,sameTab:p.peer===me,kind:'viewer',guest:false,presence:Object.freeze(p.presence||{}),updatedAt:Date.now()})));
+      for(const f of subs.slice()){ try{ f({peers:snap,joined:[],left:[],updated:[]}); }catch(e){} } };
+    const send=()=>{ if(ws&&ws.readyState===1){ try{ ws.send(JSON.stringify({t:'p',presence:pres})); }catch(e){} } };
+    const room={name,
+      presence(patch){ for(const k in patch){ if(patch[k]===null) delete pres[k]; else pres[k]=patch[k]; }
+        if(me) peers.set(me,{peer:me,presence:JSON.parse(JSON.stringify(pres))}); send(); rebuild(); return Promise.resolve(); },
+      peers:()=>snap,
+      onPeers(f){ subs.push(f); setTimeout(()=>{ try{ f({peers:snap,joined:[],left:[],updated:[]}); }catch(e){} },0); return ()=>{ const i=subs.indexOf(f); if(i>=0) subs.splice(i,1); }; },
+      connected:()=>!!ws&&ws.readyState===1,
+      leave(){ closed=true; clearInterval(ping); try{ ws&&ws.close(1000); }catch(e){} return Promise.resolve(); }};
+    function connect(){
+      ws=new WebSocket(base+encodeURIComponent(name));
+      ws.onmessage=ev=>{ let m; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+        if(m.t==='hello'){ me=m.peer; tries=0; peers.clear(); (m.peers||[]).forEach(p=>{ if(p&&p.peer) peers.set(p.peer,{peer:p.peer,presence:p.presence||{}}); });
+          peers.set(me,{peer:me,presence:JSON.parse(JSON.stringify(pres))}); send(); rebuild(); if(!settled){ settled=true; resolve(room); } }
+        else if(m.t==='p'&&m.peer){ peers.set(m.peer,{peer:m.peer,presence:m.presence||{}}); rebuild(); }
+        else if(m.t==='join'&&m.peer){ if(!peers.has(m.peer)) peers.set(m.peer,{peer:m.peer,presence:{}}); rebuild(); }
+        else if(m.t==='left'&&m.peer){ peers.delete(m.peer); rebuild(); } };
+      ws.onclose=()=>{ if(closed) return;
+        if(!settled){ settled=true; closed=true; reject({code:'upstream_error'}); return; }
+        for(const k of [...peers.keys()]) if(k!==me) peers.delete(k); rebuild();     // rival hidden until we are back
+        if(tries<8){ tries++; setTimeout(()=>{ if(!closed) connect(); },Math.min(4000,600*tries)); } };
+    }
+    connect();
+    const ping=setInterval(()=>{ if(ws&&ws.readyState===1){ try{ ws.send('{"t":"ping"}'); }catch(e){} } },25000);
+    setTimeout(()=>{ if(!settled){ settled=true; closed=true; clearInterval(ping); try{ ws.close(); }catch(e){} reject({code:'upstream_error'}); } },8000);
+  }); }};
+}
+(window.claude&&window.claude.use?window.claude.use('room'):Promise.resolve(null))
+  .then(r=>{ ROOM=r||(RELAY_URL&&'WebSocket' in window?makeRelay(RELAY_URL):null); roomTried=true; renderVsPick(); })
+  .catch(()=>{ ROOM=RELAY_URL&&'WebSocket' in window?makeRelay(RELAY_URL):null; roomTried=true; renderVsPick(); });
 function vsNick(){ const v=($('vsNick').value||'').replace(/[^\w .-]/g,'').trim().slice(0,16); return v||'Commander'; }
 try{ $('vsNick').value=localStorage.getItem('ifv-nick')||''; }catch(e){}
 function seedFrom(str){ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; }
@@ -2156,7 +2196,7 @@ function renderVsPick(){
   $('vsOnlineForm').hidden=unavailable;
   $('vsOffline').hidden=!unavailable;
   $('vsOpenClaude').hidden=!standalone;
-  $('vsRoomMsg').textContent=ok?'Create a match and send the code to a friend who can open this page. They join with the code.':unavailable?'Online play is not available here.':'Connecting to claude.ai multiplayer…';
+  $('vsRoomMsg').textContent=ok?(ROOM.relay?'Create a match and send the code to a friend. They open this game, choose Versus and join with the code. No sign-in needed.':'Create a match and send the code to a friend who can open this page. They join with the code.'):unavailable?'Online play is not available here.':'Connecting to claude.ai multiplayer…';
   $('vsOfflineWhy').textContent=standalone
     ?'Online matches run on claude.ai’s multiplayer service, so they only work in the claude.ai version of this game. Both players need to be signed in to claude.ai, and the page must be shared with your opponent. Vs AI works right here.'
     :'This view could not connect to claude.ai multiplayer. Open the game on claude.ai in a desktop web browser (Chrome, Edge, Safari or Firefox) while signed in, then reload the page. The mobile app and public links do not support online play. Vs AI works right here.';
@@ -2179,7 +2219,7 @@ async function joinMatch(code){
     MATCH.unsub=room.onPeers(onVsPeers,()=>{ $('vsLobbyMsg').textContent='The match connection dropped. Leave and join again.'; });
     await room.presence({v:1,nick:vsNick(),ready:false,round:1,lost:null,raids:[],hp:1,sites:3,st:3,wave:0});
     openVs();
-  }catch(e){ MATCH=null; $('vsRoomMsg').textContent=e&&e.code==='limit_reached'?'Too many open matches. Try again shortly.':'Could not join the match. Check the code and try again.'; }
+  }catch(e){ MATCH=null; $('vsRoomMsg').textContent=e&&e.code==='limit_reached'?'Too many open matches. Try again shortly.':(ROOM&&ROOM.relay?'Could not connect to the match. Check your internet connection and the code, then try again. A match holds two players.':'Could not join the match. Check the code and try again.'); }
 }
 function vsLeave(){ if(!MATCH) return; try{ MATCH.unsub&&MATCH.unsub(); MATCH.room.leave(); }catch(e){} MATCH=null; }
 $('vsLeave').addEventListener('click',()=>{ vsLeave(); openVs(); });

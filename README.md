@@ -18,7 +18,7 @@ A hard 3D open-field defence game that runs in the browser. Drive your rover acr
 
 It is a single `index.html` file with no build step. Open it in a modern browser with an internet connection; the 3D engine (three.js r128) and fonts load from public CDNs.
 
-Online versus play is only available in the claude.ai version, because it uses claude.ai's multiplayer service.
+Online versus works here too: matches connect through the relay on games.pak.id.au, with no sign-in needed.
 
 ## Updating
 
