@@ -206,6 +206,19 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .seg button:last-child{border-right:0}
 .seg button.on{background:rgba(95,209,193,.16);color:var(--ally)}
 #diffNote{font-size:12.5px;color:var(--mute)}
+#contBtn{background:var(--signal);color:#1c1406}
+#toast{position:absolute;left:50%;transform:translate(-50%,10px);bottom:calc(186px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center;padding:10px 16px 10px 12px;border-color:rgba(240,178,58,.6);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:20}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.medalDisc{flex:0 0 auto;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:19px;color:#1c1406;background:radial-gradient(circle at 35% 30%,#ffe3a0,var(--signal) 60%,#a8741c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.medalDisc.off{background:rgba(255,255,255,.06);color:var(--mute);box-shadow:inset 0 0 0 1px var(--line)}
+#toast b{display:block;font-family:var(--display);font-size:15px;letter-spacing:.03em}
+#toast span{font-size:12.5px;color:var(--mute)}
+#medalGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.medal{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.medal.got{border-color:rgba(240,178,58,.5)}
+.medal b{display:block;font-family:var(--display);font-size:14px;letter-spacing:.03em}
+.medal span{font-size:12.5px;color:var(--mute);line-height:1.35}
+.medal small{display:block;font-size:11px;color:var(--signal);margin-top:2px}
 /* how-to-play guide */
 #guide{place-items:start center;background:rgba(14,19,25,.95)}
 #guide .sheet{max-width:900px;gap:16px}
@@ -395,6 +408,13 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
   </div>
 
   <div id="hurt"></div>
+  <div id="toast" class="panel" role="status" aria-live="polite"><div class="medalDisc">&#9733;</div><div><span>Medal earned</span><b id="toastName"></b><span id="toastDesc"></span></div></div>
+  <div id="medals" class="screen" hidden>
+    <div class="sheet">
+      <div class="gtop"><div><div class="eyebrow" id="medalCount">Medals</div><h1>Medal <span>case</span></h1></div><button class="go" id="medalsClose" type="button">Close</button></div>
+      <div id="medalGrid"></div>
+    </div>
+  </div>
   <div id="banner"><h2 id="bannerH"></h2><p id="bannerP"></p></div>
 
   <div id="menu" class="screen">
@@ -402,9 +422,9 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="eyebrow">Open-field defence &middot; Sector 7 campaign</div>
       <h1>Ironfield <span>Vanguard</span></h1>
       <p>There are no roads out here. Hostiles cross open ground from every bearing, each column marching on a different site. You drive the only rover in the sector: haul supply, deploy defences where you stand, and race between outposts before the next wave breaks.</p>
-      <div class="btnRow"><button class="go" id="vsBtn" type="button">Versus</button><button class="go alt" id="guideBtn" type="button">How to play</button><button class="go alt" id="manualBtn" type="button">Field manual</button></div>
+      <div class="btnRow"><button class="go" id="contBtn" type="button" hidden>Continue</button><button class="go" id="vsBtn" type="button">Versus</button><button class="go alt" id="guideBtn" type="button">How to play</button><button class="go alt" id="manualBtn" type="button">Field manual</button><button class="go alt" id="medalsBtn" type="button">Medals</button></div>
       <div class="levels" id="levels"></div>
-      <div class="opts"><span class="lbl">Difficulty</span><span class="seg" id="diffSeg"><button type="button" data-d="recruit">Recruit</button><button type="button" data-d="regular">Regular</button><button type="button" data-d="veteran">Veteran</button></span><span id="diffNote"></span></div>
+      <div class="opts"><span class="lbl">Difficulty</span><span class="seg" id="diffSeg"><button type="button" data-d="recruit">Recruit</button><button type="button" data-d="regular">Regular</button><button type="button" data-d="veteran">Veteran</button></span><span id="diffNote"></span><span class="lbl">Graphics</span><span class="seg" id="gfxSeg"><button type="button" data-g="high">High</button><button type="button" data-g="medium">Medium</button><button type="button" data-g="low">Low</button></span></div>
       <div class="brief">
         <div><b>Deploy close</b>You can only build within 22 m of the rover. Drive to each site you need to hold.</div>
         <div><b>Read the map</b>Red wedges and lines on the sector map show where the next wave lands and what it is after.</div>
@@ -590,6 +610,7 @@ const VSDEF={name:'Crossfire',vs:true,blurb:'',towers:['sentry','wall','mortar',
   spawns:[{a:20,to:1},{a:70,to:1},{a:340,to:2},{a:290,to:2},{a:150,to:0},{a:210,to:0}],k0:1,kStep:3};
 const ENDLESS=Object.assign({},LEVELS[4],{name:'Last Stand',endless:true,towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],mix:{juggernaut:1,phantom:1,burrower:1,carrier:1},blurb:'Night falls on the four outposts. Hold as long as you can.',waves:Infinity,off:4,supply:520,allow:1,bosses:[],
   ter:{ox:2600,oz:-700,amp:1.15,cA:0x4a5236,cB:0x5f5a44,sky:0x1b2130,night:true}});
+LEVELS[5].ter.weather='ash'; LEVELS[8].ter.weather='snow'; LEVELS[9].ter.weather='embers';
 let TER={ox:0,oz:0,amp:1,flat:[{x:0,z:0}]};
 function H(x,z){
   const X=x+TER.ox, Z=z+TER.oz;
@@ -642,11 +663,55 @@ function resize(){
 window.addEventListener('resize',resize); resize();
 
 // ---------------------------------------------------------------- terrain
+// Weather drifts in a box that follows the camera; stars sit on the sky dome for night maps.
+let weather=null, curWeather=null, curNight=false;
+const softDot=(()=>{ const c=document.createElement('canvas'); c.width=c.height=32; const g=c.getContext('2d'), r=g.createRadialGradient(16,16,0,16,16,16);
+  r.addColorStop(0,'rgba(255,255,255,1)'); r.addColorStop(0.45,'rgba(255,255,255,0.75)'); r.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=r; g.fillRect(0,0,32,32);
+  return new THREE.CanvasTexture(c); })();
+const WX={snow:{n:1700,color:0xffffff,size:0.55,vy:-4,drift:1.2,op:0.85},ash:{n:1300,color:0x9a9088,size:0.35,vy:-1.6,drift:0.8,op:0.7,ember:0.12},embers:{n:900,color:0xff8a3c,size:0.4,vy:2.2,drift:0.6,op:0.85}};
+function setWeather(kind){
+  if(weather){ scene.remove(weather.pts); weather.pts.geometry.dispose(); weather.pts.material.dispose(); weather=null; }
+  const g=(typeof GFX!=='undefined'&&GFX[OPT.gfx])||{weather:1}; const w=WX[kind];
+  if(!w||!g.weather) return;
+  const n=Math.round(w.n*g.weather), pos=new Float32Array(n*3), col=new Float32Array(n*3), c=new THREE.Color(), e=new THREE.Color(0xff7a2a);
+  for(let i=0;i<n;i++){ pos[i*3]=focus.x+rand(-90,90); pos[i*3+1]=focus.y+rand(-6,54); pos[i*3+2]=focus.z+rand(-90,90); c.setHex(w.color); if(w.ember&&Math.random()<w.ember) c.copy(e); col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b; }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:w.size*1.6,map:softDot,vertexColors:true,transparent:true,opacity:w.op,depthWrite:false}));
+  pts.frustumCulled=false; scene.add(pts); weather={pts,w,n,phase:Math.random()*10};
+}
+function updateWeather(dt){
+  if(!weather) return;
+  const a=weather.pts.geometry.attributes.position, w=weather.w, fx=focus.x, fz=focus.z, base=focus.y-6; weather.phase+=dt;
+  for(let i=0;i<weather.n;i++){
+    let x=a.array[i*3], y=a.array[i*3+1], z=a.array[i*3+2];
+    y+=w.vy*dt*(0.7+((i*7919)%10)/20); x+=Math.sin(weather.phase*0.7+i)*w.drift*dt; z+=Math.cos(weather.phase*0.5+i*1.3)*w.drift*0.6*dt;
+    if(y<base) y+=60; else if(y>base+60) y-=60;
+    if(x<fx-90) x+=180; else if(x>fx+90) x-=180;
+    if(z<fz-90) z+=180; else if(z>fz+90) z-=180;
+    a.array[i*3]=x; a.array[i*3+1]=y; a.array[i*3+2]=z;
+  }
+  a.needsUpdate=true;
+}
+const starField=(()=>{ const n=900, pos=new Float32Array(n*3);
+  for(let i=0;i<n;i++){ const u=Math.random()*TAU, v=Math.acos(rand(0.12,1)), r=950; pos[i*3]=Math.cos(u)*Math.sin(v)*r; pos[i*3+1]=Math.cos(v)*r; pos[i*3+2]=Math.sin(u)*Math.sin(v)*r; }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const p=new THREE.Points(geo,new THREE.PointsMaterial({color:0xdfe8ff,size:2.2,sizeAttenuation:false,transparent:true,opacity:0.8,depthWrite:false,fog:false}));
+  p.frustumCulled=false; p.renderOrder=-1; p.visible=false; scene.add(p); return p; })();
+// Red pillars at the map edge show where the next wave lands.
+const spawnMarks=[];
+function updateSpawnMarks(){
+  if(!spawnMarks.length) for(let i=0;i<5;i++){ const m=new THREE.Mesh(G.cyl,new THREE.MeshBasicMaterial({color:COL.hostile,transparent:true,opacity:0.22,depthWrite:false})); m.scale.set(3,70,3); m.visible=false; scene.add(m); spawnMarks.push(m); }
+  const show=(S.vs||S.training)?[]:S.mode==='inter'?(S.nextSpawns||[]):(S.mode==='wave'&&S.queue.length)?(S.spawns||[]):[];
+  spawnMarks.forEach((m,i)=>{ const sp=show[i]; if(!sp){ m.visible=false; return; }
+    const a=spawnRad(sp), x=Math.sin(a)*(MAP-8), z=-Math.cos(a)*(MAP-8); m.position.set(x,H(x,z)+35,z); m.visible=true;
+    m.material.opacity=(S.mode==='inter'?0.16:0.26)+0.08*Math.sin(S.time*3+i); });
+}
 let terrainGroup=null;
 function buildTerrain(L){
   if(terrainGroup){ terrainGroup.traverse(o=>{ if(o.isMesh&&o.userData.own){ o.geometry.dispose(); o.material.dispose(); } }); scene.remove(terrainGroup); }
   terrainGroup=new THREE.Group(); scene.add(terrainGroup);
   TER={ox:L.ter.ox,oz:L.ter.oz,amp:L.ter.amp,flat:L.sites.map(s=>({x:s.x,z:s.z})).concat([{x:L.foe.x,z:L.foe.z,r0:38,r1:78}])};
+  curWeather=L.ter.weather||null; curNight=!!L.ter.night; setWeather(curWeather); starField.visible=curNight&&OPT.gfx!=='low';
   scene.background=new THREE.Color(L.ter.sky); scene.fog.color.setHex(L.ter.sky); paintSky(L.ter.sky);
   const night=!!L.ter.night; hemi.intensity=night?0.42:0.7; sun.intensity=night?0.5:0.95; sun.color.setHex(night?0xa8bcff:0xffd9ab); scene.fog.near=night?70:150; scene.fog.far=night?270:430;
   const geo=new THREE.PlaneGeometry(760,760,152,152); geo.rotateX(-Math.PI/2);
@@ -788,7 +853,7 @@ const FOE_TIPS={
 };
 // Difficulty and speed live in OPT, saved per browser.
 const DIFFS={recruit:{hp:0.8,dmg:0.75,supply:1.2,note:'Still a fight, with softer hostiles and more supply.'},regular:{hp:1,dmg:1,supply:1,note:'Hard. Hostiles hunt your towers, troops and rover.'},veteran:{hp:1.35,dmg:1.3,supply:0.85,note:'Brutal. Tougher, harder-hitting hostiles and less supply.'}};
-let OPT={diff:'regular',speed:1,help:true,sound:'all'};
+let OPT={diff:'regular',speed:1,help:true,sound:'all',gfx:(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)?'medium':'high'};
 try{ const o=JSON.parse(localStorage.getItem('ifv-options')||'null'); if(o) OPT=Object.assign(OPT,o); if(!DIFFS[OPT.diff]) OPT.diff='regular'; }catch(e){}
 function saveOpt(){ try{localStorage.setItem('ifv-options',JSON.stringify(OPT));}catch(e){} }
 const DF=()=>DIFFS[OPT.diff];
@@ -1238,9 +1303,83 @@ function setupLevel(i,endless){
   if(!S.vs&&!S.training) buildFoeBase(S.lvl);
   focus.set(hq.x,0,hq.z);
 }
+const MEDALS=[
+  ['recruit','Recruit','Finish Boot Camp.'],
+  ['first_win','First victory','Clear any campaign level.'],
+  ['flawless','Flawless','Earn three stars on a level.'],
+  ['breaker','HQ breaker','Destroy an enemy HQ.'],
+  ['airsupport','Air support','Destroy 10 hostiles with one airstrike.'],
+  ['builder','Builder','Deploy 30 structures or units in one level.'],
+  ['company','Full company','Command 12 units at once.'],
+  ['titan','Heavy metal','Deploy a Titan Tank.'],
+  ['duelist','Duelist','Win a Versus match.'],
+  ['holdout','Holdout','Reach wave 10 in Endless.'],
+  ['ironwill','Iron will','Reach wave 20 in Endless.'],
+  ['campaign','Sector secured','Clear all ten campaign levels.'],
+];
+let toastT=0;
+function award(id){
+  PROG.medals=PROG.medals||{}; if(PROG.medals[id]) return;
+  const m=MEDALS.find(x=>x[0]===id); if(!m) return;
+  PROG.medals[id]=new Date().toISOString().slice(0,10); saveProg();
+  $('toastName').textContent=m[1]; $('toastDesc').textContent=m[2];
+  const t=$('toast'); t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),4200); sfx('pickup');
+}
+function renderMedals(){
+  const got=PROG.medals||{}, n=MEDALS.filter(m=>got[m[0]]).length;
+  $('medalCount').textContent=n+' of '+MEDALS.length+' earned';
+  const box=$('medalGrid'); box.innerHTML='';
+  for(const [id,name,desc] of MEDALS){ const el=document.createElement('div'); el.className='medal'+(got[id]?' got':'');
+    el.innerHTML='<div class="medalDisc'+(got[id]?'':' off')+'">&#9733;</div><div><b></b><span></span>'+(got[id]?'<small></small>':'')+'</div>';
+    el.querySelector('b').textContent=name; el.querySelector('span').textContent=desc;
+    if(got[id]){ const d=got[id].split('-'); el.querySelector('small').textContent='Earned '+d[2]+'/'+d[1]+'/'+d[0]; }
+    box.appendChild(el); }
+}
+// Autosave after every cleared wave (campaign and Endless). Continue rebuilds the sector from it.
+const SAVE_KEY='ifv-save';
+let restoring=false;
+function loadSave(){ try{ const sv=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return sv&&sv.v===1?sv:null; }catch(e){ return null; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} renderContinue(); }
+function saveGame(){
+  if(S.vs||S.training) return;
+  const sv={v:1,lvl:S.lvl,endless:!!S.endless,diff:OPT.diff,wave:S.wave,supply:Math.floor(S.supply),lost:S.lost,kills:S.kills,built:S.built,time:Math.floor(S.time),
+    rebuildAt:S.rebuildAt||0,rebuilds:S.rebuilds||0,
+    sites:sites.map(st=>({alive:st.alive,hp:Math.round(st.hp)})),
+    structs:structures.filter(st=>!st.isSite).map(st=>({t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
+    units:units.map(u=>({t:u.type,x:+u.x.toFixed(1),z:+u.z.toFixed(1),k:u.rank,hp:Math.round(u.hp),sp:u.spent,m:u.mode,px:+u.postX.toFixed(1),pz:+u.postZ.toFixed(1)})),
+    foe:foeCore?{coreDead:!!foeCore.dead,parts:foeStructs.filter(f=>!f.dead).map(f=>({i:f.idx,hp:Math.round(f.hp)}))}:null};
+  try{ localStorage.setItem(SAVE_KEY,JSON.stringify(sv)); }catch(e){}
+}
+function renderContinue(){
+  const sv=loadSave(), b=document.getElementById('contBtn'); if(!b) return;
+  b.hidden=!sv; if(sv) b.textContent='Continue \u00b7 '+(sv.endless?'Endless':'Level '+(sv.lvl+1))+', wave '+(sv.wave+1);
+}
+function continueGame(){
+  const sv=loadSave(); if(!sv) return;
+  if(DIFFS[sv.diff]){ OPT.diff=sv.diff; saveOpt(); renderOpts(); }
+  restoring=true; startLevel(sv.lvl,sv.endless); restoring=false;
+  Object.assign(S,{wave:sv.wave,supply:sv.supply,lost:sv.lost,kills:sv.kills,built:sv.built,time:sv.time,mode:'inter',inter:25,rebuildAt:sv.rebuildAt,rebuilds:sv.rebuilds});
+  sv.sites.forEach((d,i)=>{ const st=sites[i]; if(!st) return; if(!d.alive){ st.alive=false; scene.remove(st.g); structures=structures.filter(o=>o!==st); } else st.hp=Math.min(st.maxHp,d.hp); });
+  sv.structs.forEach(d=>{ if(!BUILD[d.t]||BUILD[d.t].unit) return; const st=addStructure(d.t,d.x,d.z,d.r); st.level=d.l||1; st.spent=d.sp||st.spent;
+    if(st.level>1){ st.maxHp=Math.round(st.def.hp*lvlMul(st,0.35)); st.g.scale.setScalar(1+0.09*(st.level-1)); } st.hp=Math.min(st.maxHp,d.hp); });
+  restoring=true;
+  sv.units.forEach(d=>{ if(!BUILD[d.t]||!BUILD[d.t].unit) return; const u=addUnit(d.t,d.x,d.z); u.rank=d.k||1; u.spent=d.sp||u.spent;
+    u.maxHp=Math.round(u.def.hp*(1+0.3*(u.rank-1))); u.hp=Math.min(u.maxHp,d.hp); u.mode=d.m==='follow'?'follow':'guard'; u.postX=d.px; u.postZ=d.pz; });
+  restoring=false;
+  reslotFollowers();
+  if(sv.foe&&foeCore){
+    if(sv.rebuilds){ clearFoeBase(); buildFoeBase(S.lvl,1+0.5*sv.rebuilds); }
+    const keep=new Map(sv.foe.parts.map(q=>[q.i,q.hp]));
+    for(const f of foeStructs){ if(sv.foe.coreDead||!keep.has(f.idx)){ f.dead=true; scene.remove(f.g); if(f.beam){ scene.remove(f.beam); f.beam=null; } } else f.hp=Math.min(f.maxHp,keep.get(f.idx)); }
+    foeStructs=foeStructs.filter(f=>!f.dead||f===foeCore);
+  }
+  S.nextSpawns=pickSpawns(); buildSiteList();
+  banner('Welcome back',(S.endless?'Endless':'Level '+(S.lvl+1))+', wave '+(S.wave+1)+' is up next. Your sector is as you left it.','good');
+}
 function startLevel(i,endless,vs,training){
   initAudio();
   S.vs=vs||null; S.training=!!training; trainStop();
+  if(!restoring&&!vs&&!training) clearSave();
   setupLevel(i,endless); const L=LV();
   Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
   rover=modelRover(); scene.add(rover.g);
@@ -1344,11 +1483,13 @@ function waveCleared(){
   if(S.wave>=L.waves){ winLevel(); return; }
   if(L.endless){
     if(S.wave>(PROG.endlessBest||0)){ PROG.endlessBest=S.wave; saveProg(); }
+    if(S.wave>=10) award('holdout'); if(S.wave>=20) award('ironwill');
     if(foeCore&&foeCore.dead&&S.rebuildAt&&S.wave>=S.rebuildAt){ clearFoeBase(); S.rebuilds++; buildFoeBase(S.lvl,1+0.5*S.rebuilds); S.rebuildAt=0; banner('Enemy HQ rebuilt','It is back, '+Math.round(50*S.rebuilds)+'% tougher than before.','hostile'); return; }
   }
   const bonus=40+S.wave*10; S.supply+=bonus;
   S.mode='inter'; S.inter=Math.max(22,30-S.wave*0.5);
   S.nextSpawns=pickSpawns();
+  saveGame();
   banner('Wave '+S.wave+' held','+'+bonus+' supply. Next: '+S.nextSpawns.map(sp=>targetName(sp)).filter((v,i,a)=>a.indexOf(v)===i).join(', ')+'.','good');
   sfx('clear');
 }
@@ -1448,6 +1589,7 @@ function killPlayer(){
 }
 function gameOver(why){
   if(S.vs){ vsEnd(false,why); return; }
+  clearSave();
   $('againBtn').textContent='Retry'; $('overLvls').textContent='Level select';
   S.mode='over'; setBuild(null); select(null); sfx('lost');
   $('oWhy').textContent=why+' \u00b7 '+(S.endless?'Endless, best '+(PROG.endlessBest||0)+' waves':'Level '+(S.lvl+1)+', '+LV().name);
@@ -1462,7 +1604,9 @@ function winLevel(how){
   $('nextBtn').textContent='Next level'; $('winLvls').textContent='Level select';
   S.mode='won'; setBuild(null); select(null); sfx('clear');
   const L=LV(), total=sites.length, held=sites.filter(s=>s.alive).length, stars=Math.max(1,3-S.lost-(hq.hp<hq.maxHp*0.5?1:0));
-  PROG.stars[S.lvl]=Math.max(PROG.stars[S.lvl]||0,stars);
+  PROG.stars[S.lvl]=Math.max(PROG.stars[S.lvl]||0,stars); clearSave();
+  award('first_win'); if(stars>=3) award('flawless'); if(how==='base') award('breaker');
+  if(LEVELS.every((L2,k)=>k===S.lvl||PROG.stars[k]>0)) award('campaign');
   if(S.lvl+2>PROG.unlocked) PROG.unlocked=Math.min(LEVELS.length,S.lvl+2);
   saveProg();
   const last=S.lvl===LEVELS.length-1, next=LEVELS[S.lvl+1];
@@ -1530,7 +1674,7 @@ function addFoe(kind,x,z,rot,hp){
   const f={kind,isFoe:true,type:kind==='wall'?'wall':kind,def,g:mdl.g,head:mdl.head,x,z,rot:rot||0,hp:Math.round((hp||def.hp)*DF().hp),maxHp:Math.round((hp||def.hp)*DF().hp),radius:def.r,
     dead:false,vx:0,vz:0,cd:rand(0,0.6),tgt:null,scan:0,lastHit:99,flash:0,msgT:0,garT:2,phase:Math.random()*TAU};
   if(kind==='wall'){const c=Math.cos(f.rot),sn=Math.sin(f.rot); f.ax=x-c*4; f.az=z+sn*4; f.bx=x+c*4; f.bz=z-sn*4;}
-  foeStructs.push(f); return f;
+  f.idx=foeStructs.length; foeStructs.push(f); return f;
 }
 function gateAngle(){ return Math.atan2(-foeCore.x,-foeCore.z); }
 function gatePos(){ const a=gateAngle(); return {x:foeCore.x+Math.sin(a)*34,z:foeCore.z+Math.cos(a)*34}; }
@@ -1583,6 +1727,7 @@ function killFoe(f){
   if(f.kind==='core'){
     if(S.sel&&S.sel.isFoe) select(null);
     for(const o of foeStructs) if(!o.dead&&o!==f){ o.dead=true; scene.remove(o.g); boom(o.x,H(o.x,o.z)+1.5,o.z,5,0xffa050,0.8); if(o.beam){scene.remove(o.beam);} }
+    award('breaker');
     if(S.endless){ S.rebuildAt=S.wave+3; S.supply+=250; banner('Enemy HQ destroyed','+250 supply. They will rebuild it in 3 waves.','good'); }
     else { banner('Enemy HQ destroyed','Their command is gone. The sector is yours.','good'); S.winT=2; }
   }
@@ -1657,7 +1802,9 @@ function addUnit(type,x,z){
   const ring=new THREE.Mesh(selRingGeo,selRingMat); ring.scale.setScalar(def.radius/1.1); ring.position.y=0.15; ring.visible=false; mdl.g.add(ring);
   const u={type,def,rank:1,isUnit:true,g:mdl.g,head:mdl.head,ring,x,z,yaw:camYaw+Math.PI,hp:def.hp,maxHp:def.hp,radius:def.radius,alive:true,cd:rand(0,0.3),tgt:null,chase:null,scan:0,
     mode:'guard',postX:x,postZ:z,slot:0,slotN:1,lastHit:99,hit:0,spent:def.cost,healT:0,healTgt:null};
-  units.push(u); return u;
+  units.push(u);
+  if(!restoring&&!S.training){ if(units.length>=12) award('company'); if(type==='tank'&&BUILD.tank.mk===3) award('titan'); }
+  return u;
 }
 function killUnit(u){
   u.alive=false; scene.remove(u.g); shatter(u.x,H(u.x,u.z)+1,u.z,6,M.hull,1.3); boom(u.x,H(u.x,u.z)+1,u.z,3.5,0xffb060,0.5); sfx('boom',u.x,u.z);
@@ -1858,7 +2005,8 @@ function updateAbilities(dt){
       tracer(bx-st.dx*30,by+70,bz-st.dz*30,bx,by+1,bz,0xffd9a0);
       boom(bx,by+1.5,bz,6,0xffa040,0.6); sfx('boom',bx,bz);
       const dmg=130*(1+0.15*S.lvl);
-      for(const e of enemies){ if(!e.dead&&Math.hypot(e.x-bx,e.z-bz)<4.8+e.def.r) hurtEnemy(e,dmg); }
+      for(const e of enemies){ if(!e.dead&&Math.hypot(e.x-bx,e.z-bz)<4.8+e.def.r){ hurtEnemy(e,dmg); if(e.dead) st.kills=(st.kills||0)+1; } }
+      if((st.kills||0)>=10&&!S.training) award('airsupport');
       for(const f of foeStructs){ if(!f.dead&&cpoint(f,bx,bz).d<4.8) hurtFoe(f,dmg*0.8); }
       st.n++;
     }
@@ -2027,6 +2175,7 @@ function clickAt(ndc,sc){
     if(why){ sfx('deny'); floatText(p.x,H(p.x,p.z)+2,p.z,why,COL.hostile); return; }
     const def=BUILD[S.build]; S.supply-=def.cost; S.built++;
     const s=def.unit?addUnit(S.build,p.x,p.z):addStructure(S.build,p.x,p.z,S.build==='wall'?S.rot:0);
+    if(S.built>=30&&!S.training) award('builder');
     boom(s.x,H(s.x,s.z)+0.5,s.z,3,COL.ally,0.35); sfx('build');
     if(S.supply<def.cost&&!isTouch){} // keep mode so player can see cost go red
     return;
@@ -2210,6 +2359,9 @@ function renderVsPick(){
 }
 function openVs(){ $('menu').hidden=true; $('vs').hidden=false; $('vsPick').hidden=!!MATCH; $('vsLobby').hidden=!MATCH; renderVsPick(); renderLobby(); }
 $('vsBtn').addEventListener('click',()=>{ initAudio(); openVs(); });
+$('contBtn').addEventListener('click',()=>{ initAudio(); continueGame(); });
+$('medalsBtn').addEventListener('click',()=>{ renderMedals(); $('menu').hidden=true; $('medals').hidden=false; });
+$('medalsClose').addEventListener('click',()=>{ $('medals').hidden=true; $('menu').hidden=false; });
 $('vsBack').addEventListener('click',()=>{ vsLeave(); if(S.vs){ showMenu(); } else { $('vs').hidden=true; $('menu').hidden=false; } });
 $('vsAI').addEventListener('click',()=>{ vsLeave(); startVersus('ai'); });
 $('vsCreate').addEventListener('click',()=>{ const abc='abcdefghjkmnpqrstuvwxyz23456789'; let c=''; for(let i=0;i<5;i++) c+=abc[Math.floor(Math.random()*abc.length)]; joinMatch(c); });
@@ -2352,6 +2504,7 @@ function updateAI(dt){
 function vsEnd(won,why){
   if(S.mode==='won'||S.mode==='over') return;
   S.mode=won?'won':'over'; setBuild(null); select(null); sfx(won?'clear':'lost');
+  if(won) award('duelist');
   if(MATCH&&S.vs==='online'){ MATCH.running=false; MATCH.ready=false; MATCH.room.presence({lost:won?null:true,ready:false,inMatch:false}).catch(()=>{}); }
   const opp=S.vs==='ai'?'the AI commander':String(MATCH&&MATCH.opp&&MATCH.opp.presence.nick||'your rival').slice(0,16);
   if(won){
@@ -2460,7 +2613,7 @@ function updateTraining(dt){
 }
 function trFinish(){
   clearCue(); $('train').hidden=true; $('trBarFill').style.width='100%';
-  PROG.trained=1; saveProg(); S.mode='won'; setBuild(null); select(null);
+  PROG.trained=1; saveProg(); award('recruit'); S.mode='won'; setBuild(null); select(null);
   $('wLevel').textContent='Boot Camp complete'; $('bigStars').innerHTML='';
   $('wNote').textContent='You can drive, build, fight, command troops, use abilities and defend a distant site. Level 1 is next. The Field manual has every number if you want the detail.';
   $('wSites').textContent=sites.length+' / '+sites.length; $('wKills').textContent=S.kills; $('wBuilt').textContent=S.built; $('wTime').textContent=fmtTime(S.time);
@@ -2671,7 +2824,18 @@ function renderOpts(){
 document.querySelectorAll('#diffSeg button').forEach(b=>b.addEventListener('click',()=>{ OPT.diff=b.dataset.d; saveOpt(); renderOpts(); }));
 $('speedBtn').addEventListener('click',e=>{e.currentTarget.blur(); toggleSpeed();});
 $('helpBtn').addEventListener('click',e=>{e.currentTarget.blur(); toggleHelp();});
-renderSpeed(); renderHelp(); renderOpts();
+// Graphics quality: resolution, shadows and weather. Low keeps older tablets smooth.
+const GFX={high:{dpr:2,shadow:2048,weather:1},medium:{dpr:1.5,shadow:1024,weather:0.6},low:{dpr:1,shadow:0,weather:0}};
+function applyGfx(){
+  const g=GFX[OPT.gfx]||GFX.high;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,g.dpr));
+  sun.castShadow=g.shadow>0;
+  if(g.shadow&&sun.shadow.mapSize.x!==g.shadow){ sun.shadow.mapSize.set(g.shadow,g.shadow); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } }
+  resize(); setWeather(curWeather); starField.visible=curNight&&OPT.gfx!=='low';
+  document.querySelectorAll('#gfxSeg button').forEach(b=>b.classList.toggle('on',b.dataset.g===OPT.gfx));
+}
+document.querySelectorAll('#gfxSeg button').forEach(b=>b.addEventListener('click',()=>{ OPT.gfx=b.dataset.g; saveOpt(); applyGfx(); }));
+renderSpeed(); renderHelp(); renderOpts(); applyGfx(); setTimeout(()=>{ try{ renderContinue(); }catch(e){} },0);
 const SOUND_NEXT={all:'fx',fx:'off',off:'all'}, SOUND_LABEL={all:'Sound: all',fx:'Effects only',off:'Muted'};
 function toggleMute(){ OPT.sound=SOUND_NEXT[OPT.sound]||'all'; saveOpt(); renderSound(); }
 function renderSound(){ $('muteBtn').textContent=SOUND_LABEL[OPT.sound]||'Sound: all'; }
@@ -2682,6 +2846,7 @@ $('againBtn').addEventListener('click',()=>{ if(S.vs) vsRematch(); else startLev
 $('nextBtn').addEventListener('click',()=>{ if(S.training){ startLevel(0); return; } if(S.vs) vsRematch(); else startLevel(Math.min(S.lvl+1,LEVELS.length-1)); });
 ['overLvls','winLvls','quitBtn'].forEach(id=>$(id).addEventListener('click',()=>{ const wasVs=S.vs; showMenu(); if(wasVs==='online') vsLeave(); }));
 function showMenu(){
+  setTimeout(renderContinue,0); clearTimeout(bannerTimer); $('banner').className='';
   S.training=false; trainStop();
   tipIdx=-1; $('tip').hidden=true; $('raidPanel').hidden=true; $('vs').hidden=true;
   S.mode='menu'; S.paused=false; setBuild(null); select(null);
@@ -3287,6 +3452,7 @@ function frame(now){
   else if(S.mode==='over'||S.mode==='won'){ updateEnemies(dt*0.5); }
   if(!S.paused){ updateFx(dt*(playing?OPT.speed:1)); }
   updateCamera(S.paused?0:dt);
+  starField.position.copy(camera.position); if(!S.paused) updateWeather(dt); updateSpawnMarks();
   placeArrow();
   updateMusic();
   updateGhostAndRings();
