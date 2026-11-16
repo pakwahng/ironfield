@@ -414,7 +414,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div id="unitPanel" class="panel" hidden>
       <h3 id="unitTitle">1 unit</h3>
       <div id="unitStats"></div>
-      <div id="unitBtns"><button id="followBtn" type="button">Follow rover</button><button id="holdBtn" type="button">Hold ground</button><button id="allBtn" type="button">All units</button><button id="dismissBtn" type="button">Dismiss</button><button id="clearBtn" type="button">Done</button><button id="uUpBtn" type="button" style="grid-column:1 / -1">Upgrade</button></div>
+      <div id="unitBtns"><button id="followBtn" type="button">Follow rover</button><button id="holdBtn" type="button">Hold ground</button><button id="patrolBtn" type="button">Patrol</button><button id="allBtn" type="button">All units</button><button id="dismissBtn" type="button">Dismiss</button><button id="clearBtn" type="button">Done</button><button id="uUpBtn" type="button" style="grid-column:1 / -1">Upgrade</button></div>
     </div>
 
     <div id="help" class="panel">
@@ -424,7 +424,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
       <b>Right-click</b> cancel placing &nbsp; <b>T</b> rebuild ruins<br>
       <b>Drag</b> box-select units &nbsp; <b>Double-click</b> a unit to pick all of its type &nbsp; <b>Tab</b> all units<br>
-      <b>Right-click</b> move units &nbsp; <b>G</b> follow rover &nbsp; <b>\</b> hold ground<br>
+      <b>Right-click</b> move units (<b>Shift</b> adds waypoints) &nbsp; <b>G</b> follow rover &nbsp; <b>\</b> hold ground<br>
       <b>U</b> upgrade (towers or units) &nbsp; <b>X</b> sell or dismiss<br>
       <b>Space</b> launch wave &nbsp; <b>F</b> speed &nbsp; <b>P</b> pause<br>
       <b>Z</b> airstrike &nbsp; <b>C</b> repair pulse &nbsp; <b>V</b> EMP<br>
@@ -1537,7 +1537,7 @@ function saveGame(){
     rebuildAt:S.rebuildAt||0,rebuilds:S.rebuilds||0,
     sites:sites.map(st=>({alive:st.alive,hp:Math.round(st.hp)})),
     structs:structures.filter(st=>!st.isSite).map(st=>({tm:st.tmode||null,t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
-    units:units.map(u=>({t:u.type,x:+u.x.toFixed(1),z:+u.z.toFixed(1),k:u.rank,hp:Math.round(u.hp),sp:u.spent,m:u.mode,h:u.hold?1:0,px:+u.postX.toFixed(1),pz:+u.postZ.toFixed(1)})),
+    units:units.map(u=>({t:u.type,x:+u.x.toFixed(1),z:+u.z.toFixed(1),k:u.rank,hp:Math.round(u.hp),sp:u.spent,m:u.mode,h:u.hold?1:0,w:(u.wp||[]).map(p=>[+p.x.toFixed(1),+p.z.toFixed(1)]),pt:u.patrol?1:0,px:+u.postX.toFixed(1),pz:+u.postZ.toFixed(1)})),
     foe:foeCore?{coreDead:!!foeCore.dead,parts:foeStructs.filter(f=>!f.dead).map(f=>({i:f.idx,hp:Math.round(f.hp)}))}:null};
   try{ localStorage.setItem(SAVE_KEY,JSON.stringify(sv)); }catch(e){}
 }
@@ -1555,7 +1555,7 @@ function continueGame(){
     if(st.level>1){ st.maxHp=Math.round(st.def.hp*lvlMul(st,0.35)); st.g.scale.setScalar(1+0.09*(st.level-1)); } st.hp=Math.min(st.maxHp,d.hp); });
   restoring=true;
   sv.units.forEach(d=>{ if(!BUILD[d.t]||!BUILD[d.t].unit) return; const u=addUnit(d.t,d.x,d.z); u.rank=d.k||1; u.spent=d.sp||u.spent;
-    u.maxHp=Math.round(u.def.hp*(1+0.3*(u.rank-1))); u.hp=Math.min(u.maxHp,d.hp); u.mode=d.m==='follow'?'follow':'guard'; u.hold=!!d.h; u.postX=d.px; u.postZ=d.pz; });
+    u.maxHp=Math.round(u.def.hp*(1+0.3*(u.rank-1))); u.hp=Math.min(u.maxHp,d.hp); u.mode=d.m==='follow'?'follow':'guard'; u.hold=!!d.h; u.wp=(d.w||[]).map(a=>({x:a[0],z:a[1]})); u.patrol=!!d.pt; u.postX=d.px; u.postZ=d.pz; });
   restoring=false;
   reslotFollowers();
   if(sv.foe&&foeCore){
@@ -2054,14 +2054,15 @@ function setUnitSel(list,add){
   refreshUnitPanel(true);
 }
 function reslotFollowers(){ const f=units.filter(u=>u.mode==='follow'); f.forEach((u,i)=>{u.slot=i; u.slotN=f.length;}); }
-function orderMove(x,z){
+function orderMove(x,z,queue){
   if(!selUnits.length) return;
   const n=selUnits.length, cols=Math.ceil(Math.sqrt(n)), rows=Math.ceil(n/cols), sp=4.2, cy=Math.cos(camYaw), sy=Math.sin(camYaw);
   selUnits.forEach((u,i)=>{
-    const c=i%cols-(cols-1)/2, r=Math.floor(i/cols)-(rows-1)/2;
-    u.mode='guard'; u.chase=null; u.postX=clamp(x+(c*cy+r*sy)*sp,-MAP,MAP); u.postZ=clamp(z+(-c*sy+r*cy)*sp,-MAP,MAP);
+    const c=i%cols-(cols-1)/2, r=Math.floor(i/cols)-(rows-1)/2, px=clamp(x+(c*cy+r*sy)*sp,-MAP,MAP), pz=clamp(z+(-c*sy+r*cy)*sp,-MAP,MAP);
+    if(queue&&u.mode==='guard'){ u.wp=u.wp||[]; if(u.wp.length<8) u.wp.push({x:px,z:pz}); }
+    else { u.mode='guard'; u.chase=null; u.postX=px; u.postZ=pz; u.wp=[]; u.patrol=false; }
   });
-  S.ordered=true; reslotFollowers(); pulse(x,z,3.5,COL.ally); sfx('order'); refreshUnitPanel(true);
+  S.ordered=true; reslotFollowers(); pulse(x,z,queue?2.5:3.5,COL.ally); sfx('order'); refreshUnitPanel(true);
 }
 function toggleFollow(){
   if(!selUnits.length) return;
@@ -2122,6 +2123,8 @@ function updateUnits(dt){
       const sp=d.speed*(u.mode==='follow'&&L>20?1.8:1), step=Math.min(L-stop,sp*dt);
       u.x+=dx/L*step; u.z+=dz/L*step; moving=step>0.01; u.yaw=angLerp(u.yaw,yawTo(dx,dz),dt*8);
     }
+    if(u.mode==='guard'&&!u.chase&&u.wp&&u.wp.length&&Math.hypot(u.postX-u.x,u.postZ-u.z)<=1.8){
+      if(u.patrol) u.wp.push({x:u.postX,z:u.postZ}); const nx=u.wp.shift(); u.postX=nx.x; u.postZ=nx.z; }
     u.x=clamp(u.x,-MAP,MAP); u.z=clamp(u.z,-MAP,MAP);
     if(!d.fly) for(const st of structures){ const c=cpoint(st,u.x,u.z); if(c.d<u.radius){ const p=u.radius-c.d; u.x+=c.nx*p; u.z+=c.nz*p; } }
     for(const st of foeStructs){ if(st.dead) continue; const c=cpoint(st,u.x,u.z); if(c.d<u.radius){ const p=u.radius-c.d; u.x+=c.nx*p; u.z+=c.nz*p; } }
@@ -2207,24 +2210,27 @@ function refreshUnitPanel(force){
   const counts={}; let hp=0,mhp=0; selUnits.forEach(u=>{counts[u.def.name]=(counts[u.def.name]||0)+1; hp+=u.hp; mhp+=u.maxHp;});
   const follow=selUnits.every(u=>u.mode==='follow'), refund=selUnits.reduce((a,u)=>a+Math.round(u.spent*0.5),0);
   const ups=selUnits.filter(u=>u.rank<3), upCost=ups.reduce((a,u)=>a+uUpCost(u),0), ranks=selUnits.map(u=>u.rank).join('');
-  const hold=selUnits.every(u=>u.hold);
-  const key=[hold,selUnits.length,Object.entries(counts).join(),Math.ceil(hp/mhp*50),follow,refund,isTouch,ranks,S.supply>=Math.min(...ups.map(uUpCost).concat([1e9]))].join('|');
+  const hold=selUnits.every(u=>u.hold), patrol=selUnits.every(u=>u.patrol), wps=selUnits.reduce((a,u)=>a+(u.wp?u.wp.length:0),0), kills=selUnits.reduce((a,u)=>a+(u.kills||0),0);
+  const key=[hold,patrol,wps,kills,selUnits.length,Object.entries(counts).join(),Math.ceil(hp/mhp*50),follow,refund,isTouch,ranks,S.supply>=Math.min(...ups.map(uUpCost).concat([1e9]))].join('|');
   if(!force&&key===unitCache) return; unitCache=key;
   $('unitTitle').textContent=selUnits.length===1?selUnits[0].def.name:selUnits.length+' units';
   const lines=[];
   if(selUnits.length>1) lines.push(Object.entries(counts).map(([n,c])=>c+' × '+n).join(', '));
-  lines.push('Health <b>'+Math.round(hp/mhp*100)+'%</b> &middot; '+(follow?'<b>Following the rover</b>':hold?'<b>Holding ground</b>, will not chase':'<b>Guarding</b> a post'));
+  lines.push('Health <b>'+Math.round(hp/mhp*100)+'%</b> &middot; '+(follow?'<b>Following the rover</b>':patrol?'<b>Patrolling</b> its waypoints':hold?'<b>Holding ground</b>, will not chase':'<b>Guarding</b> a post')+(wps&&!patrol?' &middot; '+wps+' waypoint'+(wps>1?'s':'')+' queued':'')+' &middot; Kills <b>'+kills+'</b>');
   if(selUnits.length===1&&selUnits[0].def.note) lines.push(selUnits[0].def.note);
   if(selUnits.length===1){ const u=selUnits[0], d=u.def; lines.push('Rank <b>'+u.rank+' / 3</b> &middot; Range <b>'+Math.round(uRange(u))+' m</b> &middot; Damage <b>'+Math.round(uDmg(u))+'</b>'+(d.twin?' &times;2':'')+(d.heal?' &middot; Repairs <b>'+Math.round(d.heal*(1+0.35*(u.rank-1)))+'/s</b>':'')+(d.coax?' &middot; anti-air MG':'')); }
   else lines.push('Ranks: '+[1,2,3].map(r=>selUnits.filter(u=>u.rank===r).length+' &times; '+r).filter(x=>!x.startsWith('0')).join(', '));
-  lines.push(isTouch?'Tap open ground to send them.':'Right-click the ground to send them.');
+  lines.push(isTouch?'Tap open ground to send them.':'Right-click the ground to send them. Shift + right-click adds waypoints.');
   $('unitStats').innerHTML=lines.join('<br>');
   const fb=$('followBtn'); fb.classList.toggle('on',follow); fb.textContent=follow?'Stop following':'Follow rover';
+  const pb=$('patrolBtn'); pb.classList.toggle('on',patrol); pb.textContent=patrol?'Stop patrol':'Patrol';
   const hb=$('holdBtn'); hb.classList.toggle('on',hold); hb.textContent=hold?'Free to chase':'Hold ground';
   $('dismissBtn').textContent='Dismiss · +'+refund;
   const ub=$('uUpBtn'); ub.textContent=ups.length?'Upgrade'+(ups.length>1?' '+ups.length:'')+' · '+upCost:'Max rank'; ub.disabled=!ups.length||S.supply<Math.min(...ups.map(uUpCost));
 }
 $('followBtn').addEventListener('click',e=>{e.currentTarget.blur(); toggleFollow();});
+function togglePatrol(){ if(!selUnits.length) return; const all=selUnits.every(u=>u.patrol); let none=0; selUnits.forEach(u=>{ if(!all&&!(u.wp&&u.wp.length)) none++; u.patrol=!all&&!!(u.wp&&u.wp.length); }); if(none&&!all){ sfx('deny'); const u=selUnits[0]; floatText(u.x,H(u.x,u.z)+u.def.barY+1.5,u.z,'Shift + right-click to add waypoints first',COL.signal); } refreshUnitPanel(true); }
+$('patrolBtn').addEventListener('click',e=>{e.currentTarget.blur(); togglePatrol();});
 function toggleHold(){ if(!selUnits.length) return; const all=selUnits.every(u=>u.hold); selUnits.forEach(u=>{ u.hold=!all; if(u.hold) u.chase=null; }); refreshUnitPanel(true); }
 $('holdBtn').addEventListener('click',e=>{e.currentTarget.blur(); toggleHold();});
 $('allBtn').addEventListener('click',e=>{e.currentTarget.blur(); setUnitSel(units.slice());});
@@ -2356,7 +2362,7 @@ glCanvas.addEventListener('pointerup',e=>{
     else if(drag.right&&!drag.moved&&(S.mode==='inter'||S.mode==='wave')){
       if(S.build){ setBuild(null); }
       else if(S.aiming){ S.aiming=false; }
-      else if(selUnits.length){ const p=pickGround(ndcFrom(e)); if(p) orderMove(p.x,p.z); }
+      else if(selUnits.length){ const p=pickGround(ndcFrom(e)); if(p) orderMove(p.x,p.z,e.shiftKey); }
       else if(S.sel){ select(null); }
     }
     boxSel=null; drag=null;
@@ -3050,6 +3056,7 @@ const GUIDE=[
       <li><b>Send</b>: right-click the ground, or click the sector map to send them anywhere. They spread into a formation.</li>
       <li><b>Guard</b>: once there, they hold the spot, chase hostiles that come near, then return.</li>
       <li><b>Follow</b>: press ${kb('G')} and they escort the rover as you travel.</li>
+      <li><b>Waypoints</b>: hold ${kb('Shift')} and right-click to queue up to 8 stops. Press <b>Patrol</b> in the unit panel and they loop the route for good. Squads under attack flash red on the sector map.</li>
       <li><b>Hold ground</b>: press ${kb('\\')} and they stay put and only shoot what comes in range, instead of chasing. Good for keeping squads under tower cover when Stalkers are about.</li></ol>
     <h3>Ranks</h3>
     <p>Select units and press ${kb('U')} to upgrade them, up to rank 3. Each rank adds 30% health, 35% damage and 10% range. The rover must be close. Dismissing refunds half of everything spent.</p>
@@ -3645,9 +3652,21 @@ function hpBar(x,y,z,frac,w,color){
   octx.fillStyle='rgba(10,14,18,.75)'; octx.fillRect(p.x-w/2-1,p.y-1,w+2,h+2);
   octx.fillStyle=color; octx.fillRect(p.x-w/2,p.y,w*clamp(frac,0,1),h);
 }
+function drawRoutes(){
+  octx.save(); octx.setLineDash([6,6]); octx.lineWidth=1.5;
+  for(const u of selUnits){ if(!u.alive||u.mode!=='guard'||!(u.wp&&u.wp.length)) continue;
+    const pts=[{x:u.x,z:u.z},{x:u.postX,z:u.postZ}].concat(u.wp); if(u.patrol) pts.push({x:u.postX,z:u.postZ});
+    octx.strokeStyle=u.patrol?'rgba(240,178,58,.8)':'rgba(95,209,193,.8)'; octx.beginPath(); let started=false;
+    for(const q of pts){ const p=proj(q.x,H(q.x,q.z)+0.4,q.z); if(!p){ started=false; continue; } if(!started){ octx.moveTo(p.x,p.y); started=true; } else octx.lineTo(p.x,p.y); }
+    octx.stroke();
+    octx.fillStyle=octx.strokeStyle; for(const q of u.wp){ const p=proj(q.x,H(q.x,q.z)+0.4,q.z); if(p){ octx.beginPath(); octx.arc(p.x,p.y,3,0,TAU); octx.fill(); } }
+  }
+  octx.restore();
+}
 function drawOverlay(){
   octx.setTransform(DPR,0,0,DPR,0,0); octx.clearRect(0,0,W,Hh);
   if(S.mode==='menu') return;
+  drawRoutes();
   for(const u of units){ if(u.hp<u.maxHp||selUnits.includes(u)) hpBar(u.x,H(u.x,u.z)+u.def.barY+(u.def.fly?FLY_H+1:0),u.z,u.hp/u.maxHp,26,'#5fd1c1'); }
   if(boxSel){ octx.strokeStyle='rgba(95,209,193,.9)'; octx.fillStyle='rgba(95,209,193,.12)'; octx.lineWidth=1.5; const x=Math.min(boxSel.x0,boxSel.x1), y=Math.min(boxSel.y0,boxSel.y1), w=Math.abs(boxSel.x1-boxSel.x0), h=Math.abs(boxSel.y1-boxSel.y0); octx.fillRect(x,y,w,h); octx.strokeRect(x,y,w,h); }
   for(const e of enemies){ if(e.cloaked) continue; if(e.hp<e.maxHp||e.type==='boss'||e.type==='juggernaut') hpBar(e.x,H(e.x,e.z)+e.def.barY+(e.def.fly?FLY_H:0),e.z,e.hp/e.maxHp,e.type==='boss'?70:Math.max(22,e.def.r*24),'#e3623f'); }
@@ -3747,7 +3766,7 @@ function drawMinimap(){
     c.strokeStyle='#1b232c'; c.lineWidth=2; c.stroke();
   }
   for(const e of enemies){ if(e.cloaked) continue; const r=e.type==='boss'||e.type==='juggernaut'?6:(e.type==='brute'||e.type==='brood')?4.5:e.type==='mite'?2.2:3.2; c.fillStyle=e.def.fly?'#ff9ac0':e.type==='warden'?'#c58cff':e.type==='mender'?'#7dffa0':'#e3623f'; c.beginPath(); c.arc(X(e.x),Z(e.z),r,0,TAU); c.fill(); }
-  for(const u of units){ c.fillStyle=selUnits.includes(u)?'#ffffff':'#5fd1c1'; c.beginPath(); c.arc(X(u.x),Z(u.z),u.type==='tank'?4.5:3.5,0,TAU); c.fill(); }
+  for(const u of units){ const hit=u.lastHit<1.5&&Math.sin(S.time*14)>0; c.fillStyle=hit?'#e3623f':selUnits.includes(u)?'#ffffff':'#5fd1c1'; c.beginPath(); c.arc(X(u.x),Z(u.z),u.type==='tank'?4.5:3.5,0,TAU); c.fill(); if(u.lastHit<1.5){ c.strokeStyle='rgba(227,98,63,.7)'; c.lineWidth=1.2; c.beginPath(); c.arc(X(u.x),Z(u.z),6+((S.time*8)%4),0,TAU); c.stroke(); } }
   if(player.alive){
     const px=X(player.x), pz=Z(player.z);
     c.strokeStyle='rgba(95,209,193,.5)'; c.lineWidth=1.5; c.beginPath(); c.arc(px,pz,BUILD_R*sc,0,TAU); c.stroke();
