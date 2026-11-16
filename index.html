@@ -370,7 +370,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="wave"><span class="lbl">Wave</span><b id="waveNum">0 / 5</b></div>
       <div class="meter"><div class="lbl"><span>Sites held</span><span id="sitesTxt">2 / 2</span></div><div id="sites"></div></div>
       <div class="meter"><div class="lbl"><span>Enemy HQ</span><span id="foeTxt">Shielded</span></div><div class="bar"><i id="foeBar" style="background:var(--hostile)"></i></div></div>
-      <div class="meter"><div class="lbl"><span>Rover hull</span><span id="pTxt">100%</span></div><div class="bar"><i id="pBar"></i></div></div>
+      <div class="meter"><div class="lbl"><span id="roverName">Rover hull</span><span id="pTxt">100%</span></div><div class="bar"><i id="pBar"></i></div></div>
       <div id="supplyRow"><span id="supply">0</span><span class="lbl">supply</span><span id="income"></span><span id="unitCount"></span></div>
       <div id="status"><span id="statusTxt"></span><button id="launchBtn" hidden>Launch now</button></div>
     </div>
@@ -456,7 +456,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="levels" id="levels"></div>
       <div class="opts"><span class="lbl">Difficulty</span><span class="seg" id="diffSeg"><button type="button" data-d="recruit">Recruit</button><button type="button" data-d="regular">Regular</button><button type="button" data-d="veteran">Veteran</button></span><span id="diffNote"></span><span class="lbl">Graphics</span><span class="seg" id="gfxSeg"><button type="button" data-g="high">High</button><button type="button" data-g="medium">Medium</button><button type="button" data-g="low">Low</button></span></div>
       <div class="brief">
-        <div><b>Deploy close</b>You can only build within 22 m of the rover. Drive to each site you need to hold.</div>
+        <div><b>Deploy close</b>You can only build inside the rover's ring, 22 m at first and wider as your rover improves. Drive to each site you need to hold.</div>
         <div><b>Read the map</b>Red wedges and lines on the sector map show where the next wave lands and what it is after.</div>
         <div><b>Repair by presence</b>Anything near the rover repairs itself, outposts and HQ included.</div>
         <div><b>Take the fight to them</b>Each map has a fortified enemy HQ. Knock out its shield pylons, then level it to win early.</div>
@@ -580,7 +580,7 @@ function compass(theta){return COMPASS[((Math.round(theta/(Math.PI/4))%8)+8)%8];
 function fmtTime(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 
 // ---------------------------------------------------------------- constants
-const MAP=270, SPAWN_R=305, BUILD_R=22, REPAIR_R=11;
+const MAP=270, SPAWN_R=305, REPAIR_R=11; let BUILD_R=22;
 const COL={ally:0x5fd1c1, hostile:0xe3623f, signal:0xf0b23a, ok:0x93d36c};
 
 // Campaign. Sites are what you defend: index 0 is always the HQ. Spawns are bearings (degrees, 0 = north) and the site that column marches on.
@@ -887,6 +887,15 @@ const TANK_TIERS=[
   {mk:2,name:'Bulwark Tank',cost:200,hp:1080,speed:9.2,range:28,dmg:30,rate:1.3,splash:3.4,radius:2,barY:3.6,twin:true,blurb:'Mk II. Twin cannons, thicker armour, longer reach. Ground targets only.'},
   {mk:3,name:'Titan Tank',cost:260,hp:1560,speed:8.8,range:31,dmg:40,rate:1.2,splash:4,radius:2.3,barY:4,twin:true,coax:{range:20,dmg:7,rate:0.25},blurb:'Mk III. Twin long guns plus a machine gun that also hits flyers.'},
 ];
+// Rover marks: the rover itself improves as the campaign goes on. Level index 0-2: Mk I, 3-5: Mk II, 6+ and Endless: Mk III. Versus uses Mk II.
+const ROVER_TIERS=[
+  {mk:1,name:'Scout Rover',hp:220,speed:24,boost:38,range:20,dmg:8,rate:0.22,twin:false,regen:3,reach:22,respawn:7,rocket:null,lv:'Level 1',blurb:'Light and quick. One machine gun.'},
+  {mk:2,name:'Ranger Rover',hp:340,speed:26,boost:41,range:23,dmg:8,rate:0.2,twin:true,regen:5,reach:25,respawn:6,rocket:null,lv:'Level 4',blurb:'Twin machine guns, more armour, faster repairs and a wider build ring.'},
+  {mk:3,name:'Vanguard Rover',hp:500,speed:28,boost:44,range:26,dmg:9,rate:0.18,twin:true,regen:8,reach:28,respawn:5,rocket:{dmg:45,rate:2.4,splash:3.5},lv:'Level 7',blurb:'Twin guns plus a rocket pod that shells ground targets. Heavy armour and the widest build ring.'},
+];
+const ROVER_UNLOCK={3:'Ranger Rover (Mk II)',6:'Vanguard Rover (Mk III)'};
+let RT=ROVER_TIERS[0];
+function roverTier(){ if(S.training) return ROVER_TIERS[0]; if(S.vs) return ROVER_TIERS[1]; return S.endless||S.lvl>=6?ROVER_TIERS[2]:S.lvl>=3?ROVER_TIERS[1]:ROVER_TIERS[0]; }
 const TANK_UNLOCK={4:'Bulwark Tank (Mk II)',6:'Titan Tank (Mk III)'};
 function tankTier(){ return S.endless||S.lvl>=6?TANK_TIERS[2]:S.lvl>=4?TANK_TIERS[1]:TANK_TIERS[0]; }
 function applyTankTier(){
@@ -1011,15 +1020,20 @@ function modelOutpost(){
   for(let i=0;i<6;i++){const a=i/6*TAU+0.3; part(G.box,M.sand,2,1,1,Math.cos(a)*6.2,0.5,Math.sin(a)*6.2,g).rotation.y=-a;}
   return {g,head};
 }
-function modelRover(){
+function modelRover(mk){
+  mk=mk||1; const k=mk===1?1:mk===2?1.12:1.25;
   const g=new THREE.Group();
   const body=new THREE.Group(); g.add(body);
-  part(G.box,M.hull,2.6,0.9,3.6,0,0.9,0,body);
-  part(G.box,M.hullDark,2.9,0.5,3.9,0,0.45,0,body);
-  part(G.box,M.ally,2.62,0.14,0.5,0,1.25,1.3,body);
+  part(G.box,M.hull,2.6*k,0.9,3.6*k,0,0.9,0,body);
+  part(G.box,M.hullDark,2.9*k,0.5,3.9*k,0,0.45,0,body);
+  part(G.box,M.ally,2.62*k,0.14,0.5,0,1.25,1.3*k,body);
+  if(mk>=2){ for(const sd of [-1,1]) part(G.box,M.hullDark,0.25,0.6,3.2*k,sd*1.55*k,0.75,0,body); part(G.box,M.steel,2.0*k,0.3,0.35,0,0.75,-2.05*k,body); }
+  if(mk>=3){ part(G.box,M.amber,2.64*k,0.12,0.3,0,1.27,0.6*k,body); part(G.box,M.steel,0.08,1.6,0.08,-1.0*k,2.0,1.6*k,body); part(G.ico,M.ally,0.18,0.18,0.18,-1.0*k,2.85,1.6*k,body).castShadow=false; }
   const head=new THREE.Group(); head.position.y=1.6; body.add(head);
-  part(G.box,M.hullDark,1.3,0.6,1.5,0,0,0.1,head);
-  part(G.box,M.steel,0.25,0.25,1.8,0,0.05,-1.4,head);
+  part(G.box,M.hullDark,1.3*k,0.6,1.5*k,0,0,0.1,head);
+  if(mk===1) part(G.box,M.steel,0.25,0.25,1.8,0,0.05,-1.4,head);
+  else for(const sd of [-1,1]) part(G.box,M.steel,0.22,0.22,2.0,sd*0.32,0.05,-1.5,head);
+  if(mk>=3){ part(G.box,M.hull,0.9,0.6,1.0,0.95*k,0.15,0.2,head); for(const [x,y] of [[-0.2,0.08],[0.2,0.08],[-0.2,-0.18],[0.2,-0.18]]) part(G.cyl,M.foeDark,0.16,0.1,0.16,0.95*k+x,0.15+y,-0.32,head).rotation.x=Math.PI/2; }
   const glow=new THREE.Mesh(new THREE.CircleGeometry(2.2,16),new THREE.MeshBasicMaterial({color:COL.ally,transparent:true,opacity:0.22,depthWrite:false}));
   glow.rotation.x=-Math.PI/2; glow.position.y=0.05; g.add(glow);
   return {g,head,body};
@@ -1559,7 +1573,8 @@ function startLevel(i,endless,vs,training){
   if(!restoring&&!vs&&!training) clearSave();
   setupLevel(i,endless); const L=LV();
   Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
-  rover=modelRover(); scene.add(rover.g);
+  RT=roverTier(); BUILD_R=RT.reach; player.maxHp=RT.hp; $('roverName').textContent='Rover hull · Mk '+['I','II','III'][RT.mk-1];
+  rover=modelRover(RT.mk); scene.add(rover.g);
   Object.assign(player,{x:hq.x,z:hq.z+14,vx:0,vz:0,yaw:0,hp:player.maxHp,alive:true,respawn:0,cd:0,tgt:null,lastHit:99,kills:0}); S.kcat={}; S.ruins=[]; S.look=null;
   focus.set(player.x,0,player.z);
   for(let k=0;k<3;k++) spawnCrate(40,140);
@@ -1569,6 +1584,7 @@ function startLevel(i,endless,vs,training){
   applyTankTier();
   const fresh=S.endless?[]:L.towers.filter(t=>TOWER_LEVEL[t]===i+1&&i>0).map(t=>BUILD[t].name);
   if(!S.endless&&TANK_UNLOCK[i]) fresh.push(TANK_UNLOCK[i]);
+  if(!S.endless&&!vs&&!training&&ROVER_UNLOCK[i]) fresh.push(ROVER_UNLOCK[i]);
   startTutorial();
   if(!S.training) banner((S.endless?'Endless: ':'Level '+(i+1)+': ')+L.name,(fresh.length?'New: '+fresh.join(', ')+'. ':'')+'First contact in 40 s. Enemy HQ lies '+compass(Math.atan2(L.foe.x-hq.x,-(L.foe.z-hq.z)))+'. '+(L.allow?'You can lose '+L.allow+' outpost'+(L.allow>1?'s':'')+'.':'Hold every site.'),'');
 }
@@ -1786,7 +1802,7 @@ function destroyStructure(s){
   else { const left=LV().allow-S.lost; banner(s.name+' lost',(left?'You can lose '+left+' more. ':'You can afford no more losses. ')+'Its raiders now march on the nearest site.','hostile'); }
 }
 function killPlayer(){
-  player.alive=false; player.respawn=7; rover.g.visible=false;
+  player.alive=false; player.respawn=RT.respawn; rover.g.visible=false;
   boom(player.x,H(player.x,player.z)+1,player.z,5,0xffb060,0.6); sfx('boom');
   setBuild(null);
   banner('Rover destroyed','Redeploying at HQ in 7 s.','hostile');
@@ -3026,6 +3042,7 @@ const GUIDE=[
   {id:'units',name:'Units',html:()=>{
     const rows=ORDER.filter(t=>BUILD[t].unit&&t!=='tank').map(t=>{ const d=BUILD[t]; return '<tr class="unitrow"><td class="nm"><svg viewBox="0 0 24 24">'+d.icon+'</svg>'+d.name+'</td><td class="num">'+d.cost+'</td><td class="num">'+d.range+' m</td><td class="num">Level '+TOWER_LEVEL[t]+'</td><td>'+d.blurb+'</td></tr>'; }).join('');
     const tanks=TANK_TIERS.map((t,i)=>'<tr class="unitrow"><td class="nm"><svg viewBox="0 0 24 24">'+BUILD.tank.icon+'</svg>Mk '+t.mk+' '+t.name+'</td><td class="num">'+t.cost+'</td><td class="num">'+t.range+' m</td><td class="num">'+['Level 3','Level 5','Level 7'][i]+'</td><td>'+t.blurb+'</td></tr>').join('');
+    const rovers=ROVER_TIERS.map(t=>'<tr><td class="nm">Mk '+t.mk+' '+t.name+'</td><td class="num">'+t.hp+'</td><td class="num">'+t.range+' m</td><td class="num">'+t.reach+' m</td><td class="num">'+t.lv+'</td><td>'+t.blurb+'</td></tr>').join('');
     return `<h2>Units</h2>
     <p>Units deploy like structures, inside the rover's ring, up to <b>${UNIT_CAP}</b> at once, plus <b>2</b> for every outpost you still hold (at most <b>${UNIT_CAP_MAX}</b>). Unlike towers, you can move them.</p>
     <h3>Orders</h3>
@@ -3037,6 +3054,9 @@ const GUIDE=[
     <h3>Ranks</h3>
     <p>Select units and press ${kb('U')} to upgrade them, up to rank 3. Each rank adds 30% health, 35% damage and 10% range. The rover must be close. Dismissing refunds half of everything spent.</p>
     <div class="gwrap"><table class="gtable"><thead><tr><th>Unit</th><th>Cost</th><th>Range</th><th>Unlocks</th><th>Role</th></tr></thead><tbody>${rows}${tanks}</tbody></table></div>
+    <h3>Your rover</h3>
+    <p>The rover gets better as the campaign goes on. Each mark has more hull, longer guns, faster self-repair and a wider build ring. Versus matches use the Mk II.</p>
+    <div class="gwrap"><table class="gtable"><thead><tr><th>Rover</th><th>Hull</th><th>Guns</th><th>Build ring</th><th>From</th><th>Notes</th></tr></thead><tbody>${rovers}</tbody></table></div>
     <p>The tank card upgrades itself on higher levels: Lancer, then Bulwark, then Titan.</p>`; }},
   {id:'enemies',name:'Enemies',html:()=>{
     const LBL={shot:'Rifle',melee:'Melee',shell:'Shells',blast:'Suicide',air:'Flying'};
@@ -3168,7 +3188,7 @@ function renderLevels(){
   LEVELS.forEach((L,i)=>{
     const open=i<PROG.unlocked, b=document.createElement('button'); b.type='button'; b.className='lvl'; b.disabled=!open;
     const st=PROG.stars[i]||0;
-    const fresh=L.towers.filter(t=>TOWER_LEVEL[t]===i+1).map(t=>BUILD[t].name); if(TANK_UNLOCK[i]) fresh.push(TANK_UNLOCK[i]);
+    const fresh=L.towers.filter(t=>TOWER_LEVEL[t]===i+1).map(t=>BUILD[t].name); if(TANK_UNLOCK[i]) fresh.push(TANK_UNLOCK[i]); if(ROVER_UNLOCK[i]) fresh.push(ROVER_UNLOCK[i]);
     b.innerHTML='<span class="no">Level '+(i+1)+' \u00b7 '+L.waves+' waves</span><span class="nm">'+L.name+'</span><span class="ds">'+(open?L.blurb:'Clear Level '+i+' to unlock.')+'</span>'+
       (fresh.length?'<span class="nw">'+(i===0?'Starts with ':'New: ')+fresh.join(', ')+'</span>':'')+(open&&st?'<span class="st">'+starsHtml(st)+'</span>':'');
     b.addEventListener('click',()=>{ if(open) startLevel(i); });
@@ -3201,7 +3221,7 @@ function updatePlayer(dt){
   ix+=joy.x; iy-=joy.y;
   if(S.look&&(ix||iy)) endLook();
   const L=Math.hypot(ix,iy); if(L>1){ix/=L;iy/=L;}
-  const SPEED=(keys.ShiftLeft||keys.ShiftRight||boostHold)?38:24, mx=(rx*ix+fx_*iy)*SPEED, mz=(rz*ix+fz*iy)*SPEED;
+  const SPEED=(keys.ShiftLeft||keys.ShiftRight||boostHold)?RT.boost:RT.speed, mx=(rx*ix+fx_*iy)*SPEED, mz=(rz*ix+fz*iy)*SPEED;
   const k=1-Math.exp(-dt*5); player.vx+=(mx-player.vx)*k; player.vz+=(mz-player.vz)*k;
   player.x=clamp(player.x+player.vx*dt,-MAP,MAP); player.z=clamp(player.z+player.vz*dt,-MAP,MAP);
   for(const s of structures){ const c=cpoint(s,player.x,player.z); if(c.d<player.radius){ const p=player.radius-c.d; player.x+=c.nx*p; player.z+=c.nz*p; } }
@@ -3216,19 +3236,23 @@ function updatePlayer(dt){
   const c=Math.cos(player.yaw), s=Math.sin(player.yaw);
   rover.body.rotation.x=Math.atan(-(sx*-s+sz*-c))*-1; rover.body.rotation.z=Math.atan(sx*c-sz*s);
   // regen
-  player.lastHit+=dt; if(player.lastHit>4) player.hp=Math.min(player.maxHp,player.hp+3*dt);
+  player.lastHit+=dt; if(player.lastHit>4) player.hp=Math.min(player.maxHp,player.hp+RT.regen*dt);
   // gun
-  player.scan-=dt; if(player.scan<=0){player.scan=0.15; player.tgt=nearestHostile(player.x,player.z,20);}
+  player.scan-=dt; if(player.scan<=0){player.scan=0.15; player.tgt=nearestHostile(player.x,player.z,RT.range);}
   const t=player.tgt;
   if(t&&!t.dead){
     const want=yawTo(t.x-player.x,t.z-player.z)-player.yaw;
     rover.head.rotation.y=angLerp(rover.head.rotation.y,want,dt*12);
     player.cd-=dt;
     if(player.cd<=0){
-      player.cd=0.22; const yy=y+2.2;
-      tracer(player.x,yy,player.z,t.x,tY(t),t.z,COL.ally); curSrc=player; hurtHostile(t,8,true); curSrc=null; sfx('pshot',player.x,player.z);
+      player.cd=RT.rate; const yy=y+2.2, a=player.yaw+rover.head.rotation.y, ox=Math.cos(a)*0.32, oz=-Math.sin(a)*0.32;
+      curSrc=player;
+      if(RT.twin){ for(const sd of [-1,1]) tracer(player.x+ox*sd,yy,player.z+oz*sd,t.x+rand(-0.3,0.3),tY(t),t.z+rand(-0.3,0.3),COL.ally); hurtHostile(t,RT.dmg*2,true); }
+      else { tracer(player.x,yy,player.z,t.x,tY(t),t.z,COL.ally); hurtHostile(t,RT.dmg,true); }
+      curSrc=null; sfx('pshot',player.x,player.z);
     }
   } else { player.cd=Math.max(0,player.cd-dt); rover.head.rotation.y=angLerp(rover.head.rotation.y,0,dt*3); }
+  if(RT.rocket){ player.cd2=(player.cd2||0)-dt; if(player.cd2<=0){ const r=nearestHostile(player.x,player.z,RT.range+6,5,1); if(r){ player.cd2=RT.rocket.rate; const dist=Math.hypot(r.x-player.x,r.z-player.z), dur=0.45+dist*0.02; fireShell(player.x,y+2.4,player.z,r.x+(r.vx||0)*dur,r.z+(r.vz||0)*dur,dur,2+dist*0.12,'ally',{dmg:RT.rocket.dmg,splash:RT.rocket.splash,src:player}); sfx('thump',player.x,player.z); } else player.cd2=0.3; } }
   // crates
   for(let i=crates.length-1;i>=0;i--){
     const cr=crates[i];
