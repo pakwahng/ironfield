@@ -625,11 +625,21 @@ const LEVELS=[
    ter:{ox:5200,oz:2400,amp:1.3,cA:0xb9c6cc,cB:0xe4ebee,sky:0x8a9cad},
    sites:[{name:'Command HQ',x:0,z:40},{name:'Ice Station',x:-170,z:-60},{name:'Pass Fort',x:60,z:-170},{name:'Thaw Camp',x:170,z:80}],
    spawns:[{a:250,to:1},{a:290,to:1},{a:340,to:2},{a:20,to:2},{a:80,to:3},{a:120,to:3},{a:170,to:0},{a:210,to:0}],k0:2,kStep:2},
-  {name:'Black Spire',foe:{x:0,z:-235},blurb:'The final assault. Five sites, a fortress HQ, carriers overhead and three boss waves.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:15,off:5,supply:1000,allow:1,bosses:[5,10,15],foeHp:1.8,
+  {name:'Black Spire',foe:{x:0,z:-235},blurb:'Five sites, a fortress HQ, carriers overhead and three boss waves.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:15,off:5,supply:1000,allow:1,bosses:[5,10,15],foeHp:1.8,
    mix:{grunt:1.1,juggernaut:1.3,phantom:1.2,wasp:1.2,burrower:1.3,carrier:1.5},
    ter:{ox:-4800,oz:3600,amp:1.35,cA:0x3e3234,cB:0x5a4038,sky:0x1e1418,night:true},
    sites:[{name:'Command HQ',x:0,z:20},{name:'Spire North',x:-150,z:-130},{name:'Spire East',x:155,z:-125},{name:'Spire South',x:150,z:150},{name:'Spire West',x:-150,z:145}],
    spawns:[{a:300,to:1},{a:330,to:1},{a:30,to:2},{a:60,to:2},{a:120,to:3},{a:150,to:3},{a:210,to:4},{a:240,to:4},{a:90,to:0},{a:270,to:0}],k0:2,kStep:2},
+  {name:'Storm Front',foe:{x:-190,z:-190},blurb:'Rain and wind on an open plain. Swarms of drones and carriers ride the storm, and Stalkers hunt your squads.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:14,off:5,supply:1050,allow:1,bosses:[7,14],foeHp:1.9,
+   mix:{wasp:1.6,carrier:1.6,stalker:1.4,phantom:1.2},
+   ter:{ox:7300,oz:-3100,amp:0.9,cA:0x4c5a4a,cB:0x66705a,sky:0x3a4450,weather:'rain'},
+   sites:[{name:'Command HQ',x:0,z:10},{name:'Relay Alpha',x:150,z:-120},{name:'Relay Bravo',x:170,z:120},{name:'Relay Charlie',x:-160,z:120}],
+   spawns:[{a:40,to:1},{a:70,to:1},{a:110,to:2},{a:140,to:2},{a:220,to:3},{a:250,to:3},{a:0,to:0},{a:180,to:0}],k0:2,kStep:2},
+  {name:'Iron Heart',foe:{x:0,z:235},blurb:'The last battle. Their forge-heart HQ, Menders everywhere, and the Colossus marches on the final wave.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:16,off:6,supply:1150,allow:1,bosses:[6,11],colossus:16,foeHp:2.1,
+   mix:{mender:1.4,juggernaut:1.4,stalker:1.3,phantom:1.3,carrier:1.3,burrower:1.2},
+   ter:{ox:-6100,oz:-5200,amp:1.3,cA:0x2e2526,cB:0x4a3029,sky:0x140c0e,night:true,weather:'embers'},
+   sites:[{name:'Command HQ',x:0,z:-20},{name:'Forge North',x:-40,z:-195},{name:'Forge East',x:180,z:-40},{name:'Forge West',x:-180,z:-30},{name:'Ember Ridge',x:150,z:160}],
+   spawns:[{a:350,to:1},{a:20,to:1},{a:70,to:2},{a:100,to:2},{a:260,to:3},{a:290,to:3},{a:130,to:4},{a:160,to:4},{a:200,to:0},{a:230,to:0}],k0:2,kStep:2},
 ];
 // Endless: the Last Light layout at night, every structure unlocked, waves without end. The enemy HQ rebuilds stronger.
 // Versus arena: mirrored for both players, three sites, no enemy HQ. Neutral waves on a timer, raids from your rival.
@@ -702,7 +712,7 @@ let weather=null, curWeather=null, curNight=false;
 const softDot=(()=>{ const c=document.createElement('canvas'); c.width=c.height=32; const g=c.getContext('2d'), r=g.createRadialGradient(16,16,0,16,16,16);
   r.addColorStop(0,'rgba(255,255,255,1)'); r.addColorStop(0.45,'rgba(255,255,255,0.75)'); r.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=r; g.fillRect(0,0,32,32);
   return new THREE.CanvasTexture(c); })();
-const WX={snow:{n:1700,color:0xffffff,size:0.55,vy:-4,drift:1.2,op:0.85},ash:{n:1300,color:0x9a9088,size:0.35,vy:-1.6,drift:0.8,op:0.7,ember:0.12},embers:{n:900,color:0xff8a3c,size:0.4,vy:2.2,drift:0.6,op:0.85}};
+const WX={rain:{n:1800,color:0xa8bcd0,size:0.28,vy:-24,drift:2.5,op:0.55},snow:{n:1700,color:0xffffff,size:0.55,vy:-4,drift:1.2,op:0.85},ash:{n:1300,color:0x9a9088,size:0.35,vy:-1.6,drift:0.8,op:0.7,ember:0.12},embers:{n:900,color:0xff8a3c,size:0.4,vy:2.2,drift:0.6,op:0.85}};
 function setWeather(kind){
   if(weather){ scene.remove(weather.pts); weather.pts.geometry.dispose(); weather.pts.material.dispose(); weather=null; }
   const g=(typeof GFX!=='undefined'&&GFX[OPT.gfx])||{weather:1}; const w=WX[kind];
@@ -910,10 +920,11 @@ const UNIT_CAP=12, UNIT_CAP_MAX=20;
 function unitCap(){ return Math.min(UNIT_CAP_MAX, UNIT_CAP+2*sites.filter(s=>s.alive&&!s.isHQ).length); }
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
 const OUTDEF={name:'Outpost',hp:2200,radius:4.4,barY:9};
-const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],mender:['mender','menders'],stalker:['stalker','stalkers'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],boss:['boss','bosses']};
+const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],mender:['mender','menders'],stalker:['stalker','stalkers'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],colossus:['Colossus','Colossi'],boss:['boss','bosses']};
 const FOE_TIPS={
   sapper:['Sappers sighted','They sprint at your structures and blow up. Kill them before they arrive.'],
   warden:['Wardens sighted','Their purple field halves damage to every hostile inside it. Kill the Warden first, or use Tesla Coils.'],
+  colossus:['The Colossus is coming','Their last war machine. Armour blunts small arms, it shells anything near, and it summons Stalkers. Hit it with everything.'],
   mender:['Menders sighted','Their green field repairs every hostile inside it. Snipers, Commandos and Rail Cannons can pick them off from range.'],
   stalker:['Stalkers sighted','Fast hunters that go for your squads and ignore your towers. Keep troops near guns, or use Bulwarks to draw them.'],
   wasp:['Wasp drones sighted','They fly over barricades. Mortars and tanks cannot hit them. Use sentries, rifles or Flak.'],
@@ -938,7 +949,8 @@ const FOES={
   runner:{hp:30,speed:9.5,dmg:7,rate:0.6,range:1.2,atk:'melee',reward:4,r:0.6,aggro:16,barY:1.8},
   brute:{hp:300,speed:3.2,dmg:42,rate:1.5,range:1.8,atk:'melee',cleave:3,reward:18,r:1.4,aggro:16,barY:4.1},
   siege:{hp:120,speed:3.6,dmg:32,rate:3.0,range:25,atk:'shell',splash:3.5,reward:14,r:1.3,aggro:34,barY:3.3},
-  boss:{hp:2600,speed:2.4,dmg:95,rate:2,range:2.8,atk:'melee',cleave:5,barrage:6,reward:150,r:2.8,aggro:22,barY:7.5},
+  colossus:{hp:4500,speed:1.9,dmg:140,rate:2.4,range:3.8,atk:'melee',cleave:6.5,barrage:4.5,summon:12,reward:500,r:3.8,aggro:28,barY:11,armour:0.7,big:true},
+  boss:{big:true,hp:2600,speed:2.4,dmg:95,rate:2,range:2.8,atk:'melee',cleave:5,barrage:6,reward:150,r:2.8,aggro:22,barY:7.5},
   sapper:{hp:65,speed:8.5,dmg:170,rate:0.3,range:1.2,atk:'blast',reward:8,r:0.7,aggro:70,barY:2.2,sapper:true,blast:6},
   warden:{hp:200,speed:3.8,dmg:10,rate:1.1,range:11,atk:'shot',reward:16,r:1.1,aggro:16,barY:3.8,aura:9},
   wasp:{hp:42,speed:10,dmg:6,rate:0.55,range:9,atk:'shot',reward:6,r:0.7,aggro:20,barY:1.6,fly:true},
@@ -1108,6 +1120,13 @@ function modelFoe(type){
   } else if(type==='mite'){
     const c=part(G.cone4,M.foeDark,0.4,0.9,0.4,0,0.4,0,body); c.rotation.x=-Math.PI/2;
     part(G.box,M.foeGlow,0.3,0.08,0.05,0,0.45,-0.45,body);
+  } else if(type==='colossus'){
+    for(const [x,z] of [[-2.2,-1.8],[2.2,-1.8],[-2.2,1.8],[2.2,1.8]]){ part(G.box,M.foeDark,1.0,5.2,1.0,x,2.6,z,body); part(G.box,M.foe,1.6,0.6,1.8,x,0.3,z-0.2,body); }
+    part(G.box,M.boss,5.6,3.0,5.0,0,6.4,0,body); part(G.box,M.foeDark,6.2,0.8,5.6,0,4.9,0,body);
+    part(G.box,M.foe,2.8,1.8,2.4,0,8.6,-0.6,body); part(G.box,M.foeGlow,1.8,0.3,0.1,0,8.7,-1.82,body).castShadow=false;
+    part(G.ico,M.bossGlow,1.2,1.2,1.2,0,6.4,-2.6,body).castShadow=false;
+    for(const sd of [-1,1]){ part(G.box,M.foeDark,0.9,0.9,4.2,sd*3.4,6.6,-1.4,body); part(G.box,M.foeGlow,0.5,0.5,0.1,sd*3.4,6.6,-3.52,body).castShadow=false; }
+    for(let i=0;i<4;i++){ const s=part(G.cone6,M.foeDark,0.5,2.2,0.5,-1.8+i*1.2,8.6,1.6,body); s.rotation.x=0.5; }
   } else {
     part(G.dode,M.boss,2.6,2.6,2.6,0,3.4,0,body);
     for(let i=0;i<5;i++){const a=i/5*TAU; const s=part(G.cone6,M.foeDark,0.5,2,0.5,Math.cos(a)*2.2,3.6+Math.sin(a*2)*0.5,Math.sin(a)*2.2,body); s.rotation.z=-Math.cos(a)*1.2; s.rotation.x=Math.sin(a)*1.2;}
@@ -1459,6 +1478,8 @@ let rover=null;
 const S={mode:'menu',lvl:0,supply:0,wave:0,inter:0,queue:[],spawnT:0,spawns:[],nextSpawns:[],kills:0,built:0,time:0,crateT:5,build:null,rot:0,sel:null,paused:false,lost:0};
 let PROG={unlocked:1,stars:{}};
 try{ const raw=localStorage.getItem('ifv-campaign'); if(raw){ const p=JSON.parse(raw); if(p&&p.unlocked) PROG=Object.assign(PROG,p); } }catch(e){}
+// players who cleared the old last level get the levels added after it
+for(const k in PROG.stars) if(PROG.stars[k]>0) PROG.unlocked=Math.max(PROG.unlocked,+k+2);
 function saveProg(){ try{localStorage.setItem('ifv-campaign',JSON.stringify(PROG));}catch(e){} }
 const LV=()=>S.training?TRAINDEF:S.vs?VSDEF:S.endless?ENDLESS:LEVELS[S.lvl];
 const focus=new THREE.Vector3(0,0,14);
@@ -1502,7 +1523,8 @@ const MEDALS=[
   ['duelist','Duelist','Win a Versus match.'],
   ['holdout','Holdout','Reach wave 10 in Endless.'],
   ['ironwill','Iron will','Reach wave 20 in Endless.'],
-  ['campaign','Sector secured','Clear all ten campaign levels.'],
+  ['campaign','Sector secured','Clear all twelve campaign levels.'],
+  ['giantslayer','Giant slayer','Bring down the Colossus.'],
   ['combined','Combined arms','Field six different unit types at once.'],
   ['ghost','Ghost','Score 10 kills with a single Commando.'],
   ['skyguard','Sky guard','Bring down a Carrier with a Stinger Team.'],
@@ -1627,13 +1649,15 @@ function waveSummary(){
   const w=S.wave+1, c=waveCounts(effN(w),S.lvl), boss=bossCount(w);
   const parts=[]; for(const k in c) if(c[k]) parts.push(c[k]+' '+FOE_NAMES[k][c[k]>1?1:0]);
   if(boss) parts.push(boss+' '+FOE_NAMES.boss[boss>1?1:0]);
+  if(LV().colossus===w) parts.push('THE COLOSSUS');
   return parts.join(', ');
 }
-function waveList(n,boss){
+function waveList(n,boss,colossus){
   const c=waveCounts(n,S.lvl), L=[];
   for(const k in c) for(let i=0;i<c[k];i++) L.push(k);
   for(let i=L.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[L[i],L[j]]=[L[j],L[i]];}
   if(boss) for(let i=0;i<boss;i++) L.push('boss');
+  if(colossus) L.push('colossus');
   return L;
 }
 // Level 1 coaching: each tip advances when the player has done the thing it asks for.
@@ -1656,7 +1680,7 @@ function startWave(early){
   const L=LV();
   S.wave++; S.mode='wave'; S.spawns=S.nextSpawns;
   const n=effN(S.wave), bc=bossCount(S.wave);
-  const list=waveList(n,bc);
+  const list=waveList(n,bc,LV().colossus===S.wave);
   S.queue=list.map((t,i)=>({t,sp:S.spawns[i%S.spawns.length]}));
   if(foeCore&&!foeCore.dead){
     const tgt=baseTarget(), cnt=2+Math.floor(S.wave/2);
@@ -1739,10 +1763,10 @@ function hurtEnemy(e,dmg,pierce,small){
     e.dead=true; S.kills++; S.supply+=e.def.reward;
     if(curSrc){ curSrc.kills=(curSrc.kills||0)+1; const cat=curSrc===player?'rover':curSrc.isUnit?'units':curSrc.ability?'abilities':'defences'; S.kcat=S.kcat||{}; S.kcat[cat]=(S.kcat[cat]||0)+1;
       if(!S.training){ if(curSrc.type==='commando'&&curSrc.kills>=10) award('ghost'); if(curSrc.type==='stinger'&&e.type==='carrier') award('skyguard'); } }
-    shatter(e.x,y0Of(e),e.z,e.type==='boss'?14:e.def.r>1.2?7:4,e.type==='boss'?M.boss:M.foe,Math.max(1,e.def.r*1.4));
+    shatter(e.x,y0Of(e),e.z,e.def.big?(e.type==='colossus'?22:14):e.def.r>1.2?7:4,e.def.big?M.boss:M.foe,Math.max(1,e.def.r*1.4));
     if(e.def.brood) for(let k=0;k<e.def.brood;k++) pendingSpawns.push({t:'mite',x:e.x+rand(-1.6,1.6),z:e.z+rand(-1.6,1.6),home:e.home});
     const y=H(e.x,e.z);
-    boom(e.x,y+e.def.r,e.z,e.def.r*2.2,0xff8a4a,0.4); sfx(e.type==='boss'?'boom':'die',e.x,e.z);
+    boom(e.x,y+e.def.r,e.z,e.def.r*2.2,0xff8a4a,0.4); sfx(e.def.big?'boom':'die',e.x,e.z); if(e.type==='colossus'&&!S.training) award('giantslayer');
     if(e.def.reward>=10) floatText(e.x,y+e.def.barY,e.z,'+'+e.def.reward,COL.signal);
     scene.remove(e.g);
   }
@@ -2147,7 +2171,7 @@ function updateUnits(dt){
           if(t.isFoe) hurtFoe(t,uDmg(u)); sfx('rail',u.x,u.z); }
         else if(u.type==='mortarcrew'){ const dist=Math.hypot(t.x-u.x,t.z-u.z), dur=0.8+dist*0.03; fireShell(u.x,y+1.6,u.z,t.x+t.vx*dur,t.z+t.vz*dur,dur,7+dist*0.25,'ally',{dmg:uDmg(u),splash:d.splash,src:u}); sfx('thump',u.x,u.z); }
         else if(u.type==='shock'){ const ty=tY(t); zap(u.x,y+1.1,u.z,t.x,ty,t.z);
-          const hit=e=>{ if(e.isFoe){ hurtFoe(e,uDmg(u)); return; } hurtEnemy(e,uDmg(u),false,true); if(!e.dead) e.stunT=Math.max(e.stunT||0,(e.type==='boss'||e.type==='juggernaut'||e.type==='carrier')?0.1:d.stun); };
+          const hit=e=>{ if(e.isFoe){ hurtFoe(e,uDmg(u)); return; } hurtEnemy(e,uDmg(u),false,true); if(!e.dead) e.stunT=Math.max(e.stunT||0,(e.def.big||e.type==='juggernaut'||e.type==='carrier')?0.1:d.stun); };
           hit(t); if(!t.isFoe){ let nb=null,nd=36; for(const e of enemies){ if(e===t||e.dead||e.cloaked) continue; const dd=(e.x-t.x)**2+(e.z-t.z)**2; if(dd<nd){nd=dd;nb=e;} } if(nb){ zap(t.x,ty,t.z,nb.x,tY(nb),nb.z); hit(nb); } }
           sfx('zap',u.x,u.z); }
         else if(u.type==='demo'){ const dist=Math.hypot(t.x-u.x,t.z-u.z); fireShell(u.x,y+1.4,u.z,t.x,t.z,0.5+dist*0.03,3+dist*0.2,'ally',{dmg:uDmg(u),splash:3,src:u,wreck:d.wrecker}); sfx('thump',u.x,u.z); }
@@ -2163,7 +2187,7 @@ function updateUnits(dt){
           if(t.isFoe) hurtFoe(t,uDmg(u)*0.5);
           for(let k=0;k<3;k++){ const r=rand(0.4,1)*R; tracer(u.x+fx*0.8,y+0.9,u.z+fz*0.8,u.x+fx*r+rand(-1.2,1.2),y+rand(0.4,1.4),u.z+fz*r+rand(-1.2,1.2),0xff9a3c); }
           if(Math.random()<0.5) boom(u.x+fx*R*0.6,y+0.8,u.z+fz*R*0.6,1.3,0xff8a2a,0.2); sfx('frost',u.x,u.z); }
-        else if(u.type==='rocket'){ const ty=tY(t); tracer(u.x,y+1.7,u.z,t.x,ty,t.z,0xffb060); boom(t.x,ty,t.z,1.8,0xffa040,0.25); const heavy=t.def&&(t.def.armour||t.type==='boss'||t.type==='brute'||t.isFoe); hurtHostile(t,uDmg(u)*(heavy?1.5:1)); sfx('thump',u.x,u.z); }
+        else if(u.type==='rocket'){ const ty=tY(t); tracer(u.x,y+1.7,u.z,t.x,ty,t.z,0xffb060); boom(t.x,ty,t.z,1.8,0xffa040,0.25); const heavy=t.def&&(t.def.armour||(t.def&&t.def.big)||t.type==='brute'||t.isFoe); hurtHostile(t,uDmg(u)*(heavy?1.5:1)); sfx('thump',u.x,u.z); }
         else if(u.type==='tank'){ const dist=Math.hypot(t.x-u.x,t.z-u.z), a=u.yaw+u.head.rotation.y, ox=Math.cos(a)*0.4, oz=-Math.sin(a)*0.4;
           for(const sd of (d.twin?[-1,1]:[0])) fireShell(u.x+ox*sd,y+1.7,u.z+oz*sd,t.x+t.vx*0.3+rand(-0.6,0.6)*Math.abs(sd),t.z+t.vz*0.3+rand(-0.6,0.6)*Math.abs(sd),0.25+dist*0.012+(sd>0?0.06:0),1.5,'ally',{dmg:uDmg(u),splash:d.splash,src:u});
           sfx('thump',u.x,u.z); }
@@ -2272,7 +2296,7 @@ function useAbility(k,x,z){
     pulse(px,pz,R,COL.ok); pulse(px,pz,R*0.6,COL.ok); floatText(px,H(px,pz)+4,pz,'Repair pulse',COL.ok); sfx('clear');
   } else if(k==='emp'){
     let n=0;
-    for(const e of enemies){ if(e.dead) continue; if(Math.hypot(e.x-px,e.z-pz)<R){ e.stunT=e.type==='boss'||e.type==='juggernaut'||e.type==='carrier'?1.5:3.5; e.revealT=5; if(e.burrowed) surface(e); n++; } }
+    for(const e of enemies){ if(e.dead) continue; if(Math.hypot(e.x-px,e.z-pz)<R){ e.stunT=e.type==='colossus'?0.8:e.def.big||e.type==='juggernaut'||e.type==='carrier'?1.5:3.5; e.revealT=5; if(e.burrowed) surface(e); n++; } }
     for(const f of foeStructs){ if(!f.dead&&f.kind==='turret'&&Math.hypot(f.x-px,f.z-pz)<R+4) f.stunT=6; }
     pulse(px,pz,R,0x9fd8ff); pulse(px,pz,R*0.5,0x9fd8ff); floatText(px,H(px,pz)+4,pz,n?n+' hostiles stunned':'EMP burst',0x9fd8ff); sfx('zap'); sfx('frost');
   }
@@ -2987,9 +3011,10 @@ const FOE_GUIDE={
   burrower:['melee','Tunnels underground, untouchable, then bursts up beside a structure with a cleaving strike.','Overlapping guns, Frost to slow it once up. EMP or any splash damage forces it to surface.'],
   carrier:['air','Heavy flyer. Launches three wasp drones every 7 s and keeps its distance.','Rail Cannon, Flak, Rocket Squads, gunships. Kill it fast or the drones pile up.'],
   phantom:['melee','Cloaked raider. Invisible until it is within 12 m of your forces, or until hit.','Frost Pylons, mortar splash and EMP reveal it. Then anything can kill it.'],
+  colossus:['melee','A towering war machine on the last wave of Iron Heart. Huge hull, armour that blunts small arms, a fast shell barrage, and it calls in Stalkers every 12 s.','Everything you have: Rail Cannons, tanks, Spear beams, airstrikes and EMP. Keep squads spread out and kill the Stalkers it summons.'],
   boss:['melee','Every 5th wave or so. Cleaving melee plus a three-shell barrage every 6 s.','Rail Cannon, tanks, airstrike, EMP to buy time. Keep troops spread out.'],
 };
-const FOE_FIRST={mender:'Level 4',stalker:'Level 5',burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
+const FOE_FIRST={colossus:'Level 12',mender:'Level 4',stalker:'Level 5',burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
 const GUIDE=[
   {id:'goal',name:'Goal',html:()=>`
     <h2>Hold the line</h2>
@@ -3506,6 +3531,7 @@ function updateEnemies(dt){
     const t=e.tgt; if(!t) continue;
     const c=cpoint(t,e.x,e.z), dist=c.d-d.r, tx=c.px, tz=c.pz;
     const slow=e.slowT>0?e.slowMul:1; if(e.slowT>0) e.slowT-=dt;
+    if(d.summon){ e.cd3=(e.cd3===undefined?d.summon*0.5:e.cd3)-dt; if(e.cd3<=0){ e.cd3=d.summon; for(let k=0;k<3;k++){ const a=Math.random()*TAU; makeFoe('stalker',e.x+Math.cos(a)*6,e.z+Math.sin(a)*6,e.home); } boom(e.x,H(e.x,e.z)+4,e.z,5,0xff5a2a,0.4); sfx('boom',e.x,e.z); } }
     if(d.barrage){ e.cd2=(e.cd2===undefined?d.barrage:e.cd2)-dt; if(e.cd2<=0){ e.cd2=d.barrage; bossBarrage(e); } }
     let dx=tx-e.x, dz=tz-e.z; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;
     e.px=e.x; e.pz=e.z;
@@ -3669,7 +3695,7 @@ function drawOverlay(){
   drawRoutes();
   for(const u of units){ if(u.hp<u.maxHp||selUnits.includes(u)) hpBar(u.x,H(u.x,u.z)+u.def.barY+(u.def.fly?FLY_H+1:0),u.z,u.hp/u.maxHp,26,'#5fd1c1'); }
   if(boxSel){ octx.strokeStyle='rgba(95,209,193,.9)'; octx.fillStyle='rgba(95,209,193,.12)'; octx.lineWidth=1.5; const x=Math.min(boxSel.x0,boxSel.x1), y=Math.min(boxSel.y0,boxSel.y1), w=Math.abs(boxSel.x1-boxSel.x0), h=Math.abs(boxSel.y1-boxSel.y0); octx.fillRect(x,y,w,h); octx.strokeRect(x,y,w,h); }
-  for(const e of enemies){ if(e.cloaked) continue; if(e.hp<e.maxHp||e.type==='boss'||e.type==='juggernaut') hpBar(e.x,H(e.x,e.z)+e.def.barY+(e.def.fly?FLY_H:0),e.z,e.hp/e.maxHp,e.type==='boss'?70:Math.max(22,e.def.r*24),'#e3623f'); }
+  for(const e of enemies){ if(e.cloaked) continue; if(e.hp<e.maxHp||e.def.big||e.type==='juggernaut') hpBar(e.x,H(e.x,e.z)+e.def.barY+(e.def.fly?FLY_H:0),e.z,e.hp/e.maxHp,e.type==='colossus'?110:e.def.big?70:Math.max(22,e.def.r*24),'#e3623f'); }
   for(const s of structures){
     if(s.hp<s.maxHp) hpBar(s.x,H(s.x,s.z)+s.def.barY*(1+0.09*(s.level-1)),s.z,s.hp/s.maxHp,s.isHQ?80:36,s.repairing>0?'#93d36c':'#5fd1c1');
   }
@@ -3765,7 +3791,7 @@ function drawMinimap(){
     c.beginPath(); if(s.isHQ){ c.rect(x-r,z-r,r*2,r*2); } else { c.moveTo(x,z-r); c.lineTo(x+r,z); c.lineTo(x,z+r); c.lineTo(x-r,z); c.closePath(); } c.fill();
     c.strokeStyle='#1b232c'; c.lineWidth=2; c.stroke();
   }
-  for(const e of enemies){ if(e.cloaked) continue; const r=e.type==='boss'||e.type==='juggernaut'?6:(e.type==='brute'||e.type==='brood')?4.5:e.type==='mite'?2.2:3.2; c.fillStyle=e.def.fly?'#ff9ac0':e.type==='warden'?'#c58cff':e.type==='mender'?'#7dffa0':'#e3623f'; c.beginPath(); c.arc(X(e.x),Z(e.z),r,0,TAU); c.fill(); }
+  for(const e of enemies){ if(e.cloaked) continue; const r=e.type==='colossus'?8:e.def.big||e.type==='juggernaut'?6:(e.type==='brute'||e.type==='brood')?4.5:e.type==='mite'?2.2:3.2; c.fillStyle=e.def.fly?'#ff9ac0':e.type==='warden'?'#c58cff':e.type==='mender'?'#7dffa0':'#e3623f'; c.beginPath(); c.arc(X(e.x),Z(e.z),r,0,TAU); c.fill(); }
   for(const u of units){ const hit=u.lastHit<1.5&&Math.sin(S.time*14)>0; c.fillStyle=hit?'#e3623f':selUnits.includes(u)?'#ffffff':'#5fd1c1'; c.beginPath(); c.arc(X(u.x),Z(u.z),u.type==='tank'?4.5:3.5,0,TAU); c.fill(); if(u.lastHit<1.5){ c.strokeStyle='rgba(227,98,63,.7)'; c.lineWidth=1.2; c.beginPath(); c.arc(X(u.x),Z(u.z),6+((S.time*8)%4),0,TAU); c.stroke(); } }
   if(player.alive){
     const px=X(player.x), pz=Z(player.z);
