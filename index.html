@@ -194,7 +194,12 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 #unitBtns button.on{border-color:var(--ally);color:var(--ally)}
 #uUpBtn{border-color:var(--signal)!important;color:var(--signal)}
 #uUpBtn:disabled{opacity:.4}
-.traySep{width:1px;align-self:stretch;background:var(--line);margin:4px 3px}
+.traySep{display:none}
+.trayTabs{display:flex;flex-direction:column;gap:3px;justify-content:center;margin-right:3px;position:sticky;left:0;z-index:1;background:var(--panel-solid);padding-right:3px}
+.trayTabs button{border:1px solid var(--line);background:transparent;border-radius:4px;padding:6px 9px;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.trayTabs button.on{border-color:var(--ally);color:var(--ally);background:rgba(95,209,193,.12)}
+.trayTabs button[data-tab="squads"].on{border-color:var(--signal);color:var(--signal);background:rgba(240,178,58,.12)}
+#tray[data-tab="build"] .card.unit,#tray[data-tab="squads"] .card:not(.unit){display:none}
 .card.unit svg{stroke:var(--signal)}
 #unitCount{margin-left:auto;font-family:var(--display);font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
 #speedBtn{background:none;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-family:var(--display);font-size:10px;letter-spacing:.1em;color:var(--mute)}
@@ -406,7 +411,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div id="help" class="panel">
       <b>WASD</b> drive &nbsp; <b>Shift</b> boost<br>
       <b>Q E</b> / right-drag turn view &nbsp; <b>Wheel</b> zoom<br>
-      <b>1-9</b> structures &nbsp; <b>0 - = [ ] J K L N</b> units<br>
+      <b>1-9</b> structures &nbsp; <b>0 - = [ ] J K L N Y I O B</b> units<br>
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
       <b>Right-click</b> cancel placing &nbsp; <b>T</b> rebuild ruins<br>
       <b>Drag</b> box-select units &nbsp; <b>Tab</b> all units<br>
@@ -629,7 +634,7 @@ const VSDEF={name:'Crossfire',vs:true,blurb:'',towers:['sentry','wall','mortar',
   spawns:[{a:20,to:1},{a:70,to:1},{a:340,to:2},{a:290,to:2},{a:150,to:0},{a:210,to:0}],k0:1,kStep:3};
 const ENDLESS=Object.assign({},LEVELS[4],{name:'Last Stand',endless:true,towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],mix:{juggernaut:1,phantom:1,burrower:1,carrier:1},blurb:'Night falls on the four outposts. Hold as long as you can.',waves:Infinity,off:4,supply:520,allow:1,bosses:[],
   ter:{ox:2600,oz:-700,amp:1.15,cA:0x4a5236,cB:0x5f5a44,sky:0x1b2130,night:true}});
-[['bulwark',2],['sniper',3],['pyro',4],['drone',5]].forEach(([t,from])=>{ LEVELS.forEach((L,i)=>{ if(i>=from&&!L.towers.includes(t)) L.towers.push(t); }); ENDLESS.towers.push(t); VSDEF.towers.push(t); });
+[['bulwark',2],['sniper',3],['pyro',4],['drone',5],['mortarcrew',2],['shock',4],['demo',6],['strider',8]].forEach(([t,from])=>{ LEVELS.forEach((L,i)=>{ if(i>=from&&!L.towers.includes(t)) L.towers.push(t); }); ENDLESS.towers.push(t); VSDEF.towers.push(t); });
 LEVELS[5].ter.weather='ash'; LEVELS[8].ter.weather='snow'; LEVELS[9].ter.weather='embers';
 let TER={ox:0,oz:0,amp:1,flat:[{x:0,z:0}]};
 function H(x,z){
@@ -848,6 +853,14 @@ const BUILD={
     icon:'<path d="M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 3-7 1 2 2 3 3 3 0-3-1-5 0-7z"/>'},
   drone:{key:'N',unit:true,fly:true,name:'Scout Drone',cost:120,hp:150,speed:22,range:18,dmg:4,rate:0.4,radius:1.0,barY:2.0,spot:22,blurb:'Fast flyer. Reveals Phantoms and spots Burrowers underground so your guns can hit them.',note:'Reveals cloaked and buried hostiles within <b>22 m</b>',
     icon:'<rect x="9" y="10" width="6" height="4" rx="1"/><path d="M9 11H5M15 11h4M9 13l-3 3M15 13l3 3"/><circle cx="4" cy="11" r="1.5"/><circle cx="20" cy="11" r="1.5"/>'},
+  mortarcrew:{key:'Y',unit:true,name:'Mortar Crew',cost:100,hp:180,speed:9,range:38,minRange:8,dmg:40,rate:2.8,splash:5,radius:1.2,barY:2.4,blurb:'Mobile artillery. Lobs splash shells up to 38 m but cannot fire up close.',note:'Splash shells to <b>38 m</b> &middot; dead zone <b>8 m</b> &middot; ground only',
+    icon:'<path d="M5 19h14"/><path d="M8 19l2-4h4l2 4"/><path d="M12 15l5-8"/><circle cx="18" cy="6" r="1.4"/><circle cx="7" cy="12" r="1.6"/>'},
+  shock:{key:'I',unit:true,name:'Shock Troopers',cost:85,hp:200,speed:11,range:13,dmg:10,rate:0.6,radius:1.1,barY:2.6,chain:1,stun:0.35,blurb:'Electric rifles. Each shot arcs to a second hostile and stuns both for a moment.',note:'Shots <b>arc</b> to a second target and <b>stun</b> briefly',
+    icon:'<path d="M13 3L7 13h4l-1 8 7-11h-4z"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="5" r="1.5"/>'},
+  demo:{key:'O',unit:true,name:'Demolition Team',cost:120,hp:240,speed:10,range:8,dmg:60,rate:1.8,radius:1.1,barY:2.6,guard:0.8,wrecker:3,blurb:'Throws charges that do triple damage to enemy structures. Bring them to the enemy HQ.',note:'<b>Triple</b> damage to enemy structures &middot; takes <b>20%</b> less damage',
+    icon:'<rect x="6" y="9" width="12" height="9" rx="2"/><path d="M12 9V6M12 6l3-3"/><path d="M9 13h6"/>'},
+  strider:{key:'B',unit:true,name:'Strider Mech',cost:240,hp:1300,speed:7.5,range:22,dmg:9,rate:0.12,radius:2.2,barY:5.4,blurb:'Heavy walker. Twin machine guns that hit ground and air, and a lot of armour.',note:'Twin guns, <b>ground and air</b> &middot; very tough',
+    icon:'<rect x="8" y="5" width="8" height="6" rx="1"/><path d="M10 11l-3 9M14 11l3 9M6 20h3M15 20h3"/><path d="M16 7h4"/>'},
 };
 // Tank marks: the tank card improves as the campaign goes on. Level index 2-3: Mk I, 4-5: Mk II, 6+ and Endless: Mk III.
 const TANK_TIERS=[
@@ -863,8 +876,8 @@ function applyTankTier(){
   if(ghosts.tank){ scene.remove(ghosts.tank); delete ghosts.tank; }
   const card=document.querySelector('.card[data-type="tank"] .nm'); if(card) card.textContent=t.name;
 }
-const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship','bulwark','sniper','pyro','drone'];
-const KEY_IDX={Digit1:0,Digit2:1,Digit3:2,Digit4:3,Digit5:4,Digit6:5,Digit7:6,Digit8:7,Digit9:8,Digit0:9,Minus:10,Equal:11,BracketLeft:12,BracketRight:13,KeyJ:14,KeyK:15,KeyL:16,KeyN:17};
+const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship','bulwark','sniper','pyro','drone','mortarcrew','shock','demo','strider'];
+const KEY_IDX={Digit1:0,Digit2:1,Digit3:2,Digit4:3,Digit5:4,Digit6:5,Digit7:6,Digit8:7,Digit9:8,Digit0:9,Minus:10,Equal:11,BracketLeft:12,BracketRight:13,KeyJ:14,KeyK:15,KeyL:16,KeyN:17,KeyY:18,KeyI:19,KeyO:20,KeyB:21};
 const UNIT_CAP=12;
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
 const OUTDEF={name:'Outpost',hp:2200,radius:4.4,barY:9};
@@ -886,7 +899,7 @@ try{ const o=JSON.parse(localStorage.getItem('ifv-options')||'null'); if(o) OPT=
 function saveOpt(){ try{localStorage.setItem('ifv-options',JSON.stringify(OPT));}catch(e){} }
 const DF=()=>DIFFS[OPT.diff];
 const TOWER_LEVEL={}; ORDER_INIT();
-function ORDER_INIT(){ for(const t of ['bulwark','sniper','pyro','drone','sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
+function ORDER_INIT(){ for(const t of ['mortarcrew','shock','demo','strider','bulwark','sniper','pyro','drone','sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
 
 // atk: shot = hitscan rifle fire, shell = lobbed splash round, melee = strike (cleave hits everything near the target), blast = suicide charge
 const FOES={
@@ -1176,7 +1189,36 @@ function modelDrone(){
   g.userData.rotors=rotors;
   return {g,head};
 }
-const MODEL={bulwark:modelBulwark,sniper:modelSniper,pyro:modelPyro,drone:modelDrone,shield:modelShield,gunship:modelGunship,rail:modelRail,rocket:modelRocket,sentry:modelSentry,mortar:modelMortar,frost:modelFrost,wall:modelWall,pump:modelPump,tesla:modelTesla,flak:modelFlak,trooper:modelTrooper,engineer:modelEngineer,tank:modelTank};
+function modelMortarCrew(){
+  const g=new THREE.Group(), head=new THREE.Group(); g.add(head);
+  part(G.cyl,M.sand,0.9,0.3,0.9,0,0.15,-0.2,head);
+  const tube=part(G.cyl,M.steel,0.22,1.5,0.22,0,0.8,-0.45,head); tube.rotation.x=-0.6;
+  [[-0.75,0.35],[0.75,0.35]].forEach(([x,z])=>{ part(G.box,M.hull,0.5,0.85,0.4,x,0.72,z,head); part(G.box,M.hullDark,0.36,0.36,0.36,x,1.33,z,head); part(G.box,M.ally,0.52,0.1,0.42,x,0.98,z,head); });
+  return {g,head};
+}
+function modelShock(){
+  const g=new THREE.Group(), head=new THREE.Group(); g.add(head);
+  const glow=std(0x9fd8ff,{emissive:0x6fc4ff,emissiveIntensity:1});
+  [[0,-0.55],[-0.65,0.4],[0.65,0.4]].forEach(([x,z])=>{ part(G.box,M.hull,0.5,0.85,0.4,x,0.75,z,head); part(G.box,M.hullDark,0.36,0.36,0.36,x,1.38,z,head);
+    part(G.box,M.steel,0.12,0.12,0.8,x+0.2,0.95,z-0.4,head); part(G.ico,glow,0.1,0.1,0.1,x+0.2,0.95,z-0.82,head).castShadow=false; });
+  return {g,head};
+}
+function modelDemo(){
+  const g=new THREE.Group(), head=new THREE.Group(); g.add(head);
+  [[-0.5,0],[0.5,0.1]].forEach(([x,z])=>{ part(G.box,M.hull,0.55,0.9,0.42,x,0.75,z,head); part(G.box,M.hullDark,0.38,0.38,0.38,x,1.38,z,head);
+    part(G.box,M.amber,0.5,0.4,0.25,x,0.95,z+0.32,head); part(G.box,M.foeGlow,0.12,0.06,0.04,x,1.18,z+0.46,head).castShadow=false; });
+  return {g,head};
+}
+function modelStrider(){
+  const g=new THREE.Group();
+  for(const x of [-0.8,0.8]){ part(G.box,M.hullDark,0.45,2.4,0.45,x,1.2,0.3,g); part(G.box,M.steel,0.7,0.25,1.2,x,0.12,0.1,g); }
+  const head=new THREE.Group(); head.position.y=2.9; g.add(head);
+  part(G.box,M.hull,2.2,1.1,2,0,0,0,head); part(G.box,M.hullDark,1.4,0.5,0.7,0,0.4,-0.9,head);
+  for(const x of [-1.25,1.25]){ part(G.box,M.steel,0.3,0.3,1.8,x,-0.1,-0.9,head); }
+  part(G.box,M.ally,2.22,0.14,0.5,0,0.45,0.6,head); part(G.box,M.amber,0.6,0.12,0.06,0,0.15,-1.02,head).castShadow=false;
+  return {g,head};
+}
+const MODEL={mortarcrew:modelMortarCrew,shock:modelShock,demo:modelDemo,strider:modelStrider,bulwark:modelBulwark,sniper:modelSniper,pyro:modelPyro,drone:modelDrone,shield:modelShield,gunship:modelGunship,rail:modelRail,rocket:modelRocket,sentry:modelSentry,mortar:modelMortar,frost:modelFrost,wall:modelWall,pump:modelPump,tesla:modelTesla,flak:modelFlak,trooper:modelTrooper,engineer:modelEngineer,tank:modelTank};
 
 // ---------------------------------------------------------------- ground-hugging rings
 function makeRing(color,opacity){
@@ -1966,11 +2008,13 @@ function unitsInBox(b){
 function updateUnits(dt){
   for(const u of units){
     if(!u.alive) continue;
-    const d=u.def, ground=(u.type==='tank'||u.type==='pyro')?1:0;
+    const d=u.def, ground=(u.type==='tank'||u.type==='pyro'||u.type==='mortarcrew'||u.type==='demo')?1:0;
     u.lastHit+=dt;
     u.scan-=dt;
     if(u.scan<=0){
       u.scan=0.25; u.tgt=nearestHostile(u.x,u.z,uRange(u),0,ground);
+      if(d.minRange) u.tgt=nearestHostile(u.x,u.z,uRange(u),d.minRange,ground);
+      if(d.wrecker){ let fb=null,fd=uRange(u)+0.01; const sh=shielded(); for(const f of foeStructs){ if(f.dead||(f.kind==='core'&&sh)) continue; const dd=Math.max(0,cpoint(f,u.x,u.z).d); if(dd<fd){fd=dd;fb=f;} } if(fb) u.tgt=fb; }
       if(u.type==='sniper'){ let best=null,bh=0; const R2=uRange(u)*uRange(u); for(const e of enemies){ if(e.dead||e.cloaked) continue; const dx=e.x-u.x,dz=e.z-u.z; if(dx*dx+dz*dz<R2&&e.hp>bh){bh=e.hp;best=e;} } if(best) u.tgt=best; }
       u.chase=null;
       if(!u.tgt&&u.mode==='guard'){ const e=nearestEnemy(u.postX,u.postZ,uRange(u)+12,0,ground); if(e) u.chase=e; }
@@ -1998,7 +2042,16 @@ function updateUnits(dt){
       u.head.rotation.y=angLerp(u.head.rotation.y,want-u.yaw,dt*10);
       if(u.cd<=0){
         u.cd=d.rate; curSrc=u;
-        if(u.type==='sniper'){ const ty=tY(t); tracer(u.x,y+0.6,u.z,t.x,ty,t.z,0xe8f6ff); tracer(u.x,y+0.65,u.z,t.x,ty+0.05,t.z,0xe8f6ff);
+        if(u.type==='mortarcrew'){ const dist=Math.hypot(t.x-u.x,t.z-u.z), dur=0.8+dist*0.03; fireShell(u.x,y+1.6,u.z,t.x+t.vx*dur,t.z+t.vz*dur,dur,7+dist*0.25,'ally',{dmg:uDmg(u),splash:d.splash,src:u}); sfx('thump',u.x,u.z); }
+        else if(u.type==='shock'){ const ty=tY(t); zap(u.x,y+1.1,u.z,t.x,ty,t.z);
+          const hit=e=>{ if(e.isFoe){ hurtFoe(e,uDmg(u)); return; } hurtEnemy(e,uDmg(u),false,true); if(!e.dead) e.stunT=Math.max(e.stunT||0,(e.type==='boss'||e.type==='juggernaut'||e.type==='carrier')?0.1:d.stun); };
+          hit(t); if(!t.isFoe){ let nb=null,nd=36; for(const e of enemies){ if(e===t||e.dead||e.cloaked) continue; const dd=(e.x-t.x)**2+(e.z-t.z)**2; if(dd<nd){nd=dd;nb=e;} } if(nb){ zap(t.x,ty,t.z,nb.x,tY(nb),nb.z); hit(nb); } }
+          sfx('zap',u.x,u.z); }
+        else if(u.type==='demo'){ const dist=Math.hypot(t.x-u.x,t.z-u.z); fireShell(u.x,y+1.4,u.z,t.x,t.z,0.5+dist*0.03,3+dist*0.2,'ally',{dmg:uDmg(u),splash:3,src:u,wreck:d.wrecker}); sfx('thump',u.x,u.z); }
+        else if(u.type==='strider'){ const ty=tY(t), a=u.yaw+u.head.rotation.y, ox=Math.cos(a)*1.25, oz=-Math.sin(a)*1.25;
+          for(const sd of [-1,1]) tracer(u.x+ox*sd,y+2.8,u.z+oz*sd,t.x+rand(-0.4,0.4),ty,t.z+rand(-0.4,0.4),0xffe2a0);
+          hurtHostile(t,uDmg(u)*2,true); sfx('shot',u.x,u.z); }
+        else if(u.type==='sniper'){ const ty=tY(t); tracer(u.x,y+0.6,u.z,t.x,ty,t.z,0xe8f6ff); tracer(u.x,y+0.65,u.z,t.x,ty+0.05,t.z,0xe8f6ff);
           if(t.isFoe) hurtFoe(t,uDmg(u)); else hurtEnemy(t,uDmg(u),true,false); boom(t.x,ty,t.z,0.9,0xe8f6ff,0.15); sfx('rail',u.x,u.z); }
         else if(u.type==='pyro'){
           const a=yawTo(t.x-u.x,t.z-u.z), fx=-Math.sin(a), fz=-Math.cos(a), R=uRange(u), burn=d.burn*(1+0.35*(u.rank-1));
@@ -2266,6 +2319,7 @@ function setBuild(type){
   S.build=type; for(const k in ghosts) ghosts[k].visible=false;
   if(type){ select(null); if(selUnits.length) setUnitSel([]); }
   document.querySelectorAll('.card').forEach(c=>c.classList.toggle('active',c.dataset.type===type));
+  if(type&&BUILD[type]) setTrayTab(BUILD[type].unit?'squads':'build');
 }
 function placeCheck(type,x,z,rot){
   const def=BUILD[type];
@@ -2376,8 +2430,13 @@ function refreshSel(force){
 }
 
 // tray
+function setTrayTab(tab){ const tray=$('tray'); tray.dataset.tab=tab; tray.querySelectorAll('.trayTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab)); }
 (function buildTray(){
   const tray=$('tray');
+  const tabs=document.createElement('div'); tabs.className='trayTabs';
+  tabs.innerHTML='<button type="button" data-tab="build">Build</button><button type="button" data-tab="squads">Squads</button>';
+  tabs.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ b.blur(); setTrayTab(b.dataset.tab); }));
+  tray.appendChild(tabs);
   ORDER.forEach(t=>{
     const d=BUILD[t];
     if(d.unit&&!tray.querySelector('.traySep')){ const sep=document.createElement('div'); sep.className='traySep'; tray.appendChild(sep); }
@@ -2387,6 +2446,7 @@ function refreshSel(force){
     b.dataset.base=d.cost;
     tray.appendChild(b);
   });
+  setTrayTab('build');
 })();
 function refreshTray(){
   document.querySelectorAll('.card').forEach(c=>{
@@ -2709,7 +2769,7 @@ const TSTEPS=[
 ];
 function setBeacon(x,z,r,build){ trBeacon={x,z,r,build}; trRing.visible=true; setRing(trRing,x,z,r); trCol.visible=true; trCol.position.set(x,H(x,z)+15,z); trCol.scale.set(build?0.25:0.6,30,build?0.25:0.6); }
 function clearBeacon(){ trBeacon=null; trRing.visible=false; trCol.visible=false; }
-function setHL(sel){ if(trHL===sel) return; document.querySelectorAll('.tHL').forEach(e=>e.classList.remove('tHL')); trHL=sel; if(sel){ const el=document.querySelector(sel); if(el){ el.classList.add('tHL'); if(el.closest('#tray')) el.scrollIntoView({block:'nearest',inline:'center'}); } } }
+function setHL(sel){ if(trHL===sel) return; document.querySelectorAll('.tHL').forEach(e=>e.classList.remove('tHL')); trHL=sel; if(sel){ const el=document.querySelector(sel); if(el){ if(el.classList.contains('card')&&BUILD[el.dataset.type]) setTrayTab(BUILD[el.dataset.type].unit?'squads':'build'); el.classList.add('tHL'); if(el.closest('#tray')) el.scrollIntoView({block:'nearest',inline:'center'}); } } }
 function clearCue(){ clearBeacon(); setHL(null); }
 function focusOn(p){ /* nudge the view toward a far target so it shows on screen */ camYawT=Math.atan2(player.x-p.x,player.z-p.z); }
 function startTraining(){
@@ -2805,7 +2865,7 @@ const GUIDE=[
       <div class="gcard"><h4>Keyboard and mouse</h4><ul>
         <li>${kb('W')}${kb('A')}${kb('S')}${kb('D')} drive, ${kb('Shift')} boost</li>
         <li>${kb('Q')} ${kb('E')} or right-drag to turn the view, wheel to zoom</li>
-        <li>${kb('1')} to ${kb('9')} pick a structure, ${kb('0')} ${kb('-')} ${kb('=')} ${kb('[')} ${kb(']')} ${kb('J')} ${kb('K')} ${kb('L')} ${kb('N')} pick a unit</li>
+        <li>${kb('1')} to ${kb('9')} pick a structure, ${kb('0')} ${kb('-')} ${kb('=')} ${kb('[')} ${kb(']')} ${kb('J')} ${kb('K')} ${kb('L')} ${kb('N')} ${kb('Y')} ${kb('I')} ${kb('O')} ${kb('B')} pick a unit. The tray's Build and Squads tabs switch the cards shown</li>
         <li>Click inside the teal ring to deploy. ${kb('R')} rotates a barricade. Right-click or ${kb('Esc')} cancels</li>
         <li>Click a structure to inspect, ${kb('U')} upgrade, ${kb('X')} sell</li>
         <li>Click or drag a box to select units, ${kb('Tab')} selects all</li>
@@ -3199,8 +3259,8 @@ function updateProjectiles(dt){
       scene.remove(p.m); projectiles.splice(i,1);
       if(p.side==='ally'){
         const R=p.data.splash; curSrc=p.data.src||null;
-        for(const e of enemies){ if(e.dead||e.def.fly) continue; const d=Math.hypot(e.x-p.tx,e.z-p.tz); if(d<R+e.def.r) hurtEnemy(e,p.data.dmg*(1-0.5*clamp(d/R,0,1))); }
-        for(const f of foeStructs){ if(f.dead) continue; const d=Math.max(0,cpoint(f,p.tx,p.tz).d); if(d<R) hurtFoe(f,p.data.dmg*(1-0.5*clamp(d/R,0,1))); }
+        for(const e of enemies){ if(e.dead||e.def.fly) continue; const d=Math.hypot(e.x-p.tx,e.z-p.tz); if(d<R+e.def.r) hurtEnemy(e,p.data.dmg*(p.data.wreck?0.5:1)*(1-0.5*clamp(d/R,0,1))); }
+        for(const f of foeStructs){ if(f.dead) continue; const d=Math.max(0,cpoint(f,p.tx,p.tz).d); if(d<R) hurtFoe(f,p.data.dmg*(p.data.wreck||1)*(1-0.5*clamp(d/R,0,1))); }
         boom(p.tx,p.ty,p.tz,R*0.9,0xffb04a,0.45); sfx('boom',p.tx,p.tz); curSrc=null;
       } else {
         const t=p.data.target, R=p.data.splash||3;
