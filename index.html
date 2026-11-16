@@ -201,6 +201,15 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .trayTabs button:not([data-tab="build"]).on{border-color:var(--signal);color:var(--signal);background:rgba(240,178,58,.12)}
 #tray[data-tab="build"] .card.unit,#tray[data-tab="infantry"] .card:not(.inf),#tray[data-tab="vehicles"] .card:not(.veh){display:none}
 .card.unit svg{stroke:var(--signal)}
+.card .cnt{position:absolute;right:4px;bottom:5px;font-family:var(--display);font-size:10px;font-weight:600;color:var(--ally)}
+#cardTip{position:fixed;z-index:40;width:250px;padding:10px 12px;background:var(--panel-solid);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:12px;line-height:1.4;pointer-events:none}
+#cardTip[hidden]{display:none}
+#cardTip .ctH{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-family:var(--display);font-size:13px}
+#cardTip .ctH span{color:var(--signal);font-size:11px;white-space:nowrap}
+#cardTip p{margin:5px 0 0;color:var(--mute)}
+#cardTip .ctN{color:var(--ink,inherit)}
+#cardTip .ctS{margin-top:7px;padding-top:6px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:3px 12px;font-size:11px;color:var(--mute)}
+#cardTip .ctS b{color:var(--ink,#e8eef0)}
 #unitCount{margin-left:auto;font-family:var(--display);font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
 #speedBtn{background:none;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-family:var(--display);font-size:10px;letter-spacing:.1em;color:var(--mute)}
 #speedBtn.fast{color:var(--signal);border-color:var(--signal)}
@@ -414,7 +423,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <b>1-9</b> structures &nbsp; <b>0 - = [ ] J K L N Y I O B , . ; /</b> units<br>
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
       <b>Right-click</b> cancel placing &nbsp; <b>T</b> rebuild ruins<br>
-      <b>Drag</b> box-select units &nbsp; <b>Tab</b> all units<br>
+      <b>Drag</b> box-select units &nbsp; <b>Double-click</b> a unit to pick all of its type &nbsp; <b>Tab</b> all units<br>
       <b>Right-click</b> move units &nbsp; <b>G</b> follow rover<br>
       <b>U</b> upgrade (towers or units) &nbsp; <b>X</b> sell or dismiss<br>
       <b>Space</b> launch wave &nbsp; <b>F</b> speed &nbsp; <b>P</b> pause<br>
@@ -886,7 +895,8 @@ function applyTankTier(){
 }
 const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship','bulwark','sniper','pyro','drone','mortarcrew','shock','demo','strider','stinger','commando','jammer','spear'];
 const KEY_IDX={Digit1:0,Digit2:1,Digit3:2,Digit4:3,Digit5:4,Digit6:5,Digit7:6,Digit8:7,Digit9:8,Digit0:9,Minus:10,Equal:11,BracketLeft:12,BracketRight:13,KeyJ:14,KeyK:15,KeyL:16,KeyN:17,KeyY:18,KeyI:19,KeyO:20,KeyB:21,Comma:22,Period:23,Semicolon:24,Slash:25};
-const UNIT_CAP=12;
+const UNIT_CAP=12, UNIT_CAP_MAX=20;
+function unitCap(){ return Math.min(UNIT_CAP_MAX, UNIT_CAP+2*sites.filter(s=>s.alive&&!s.isHQ).length); }
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
 const OUTDEF={name:'Outpost',hp:2200,radius:4.4,barY:9};
 const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],boss:['boss','bosses']};
@@ -1238,6 +1248,8 @@ function modelCommando(){
   const camo=std(0x4f5a3a);
   [[-0.45,0],[0.45,0.2]].forEach(([x,z])=>{ part(G.box,camo,0.48,0.8,0.38,x,0.7,z,head); part(G.box,M.hullDark,0.34,0.34,0.34,x,1.28,z,head);
     part(G.box,M.steel,0.08,0.08,1.1,x+0.18,0.95,z-0.5,head); });
+  const mats=new Map(); head.traverse(o=>{ if(o.isMesh){ if(!mats.has(o.material)) mats.set(o.material,o.material.clone()); o.material=mats.get(o.material); o.material.transparent=true; } });
+  g.userData.fade=[...mats.values()];
   return {g,head};
 }
 function modelJammer(){
@@ -2120,6 +2132,7 @@ function updateUnits(dt){
     } else { u.cd=Math.max(0,u.cd); u.head.rotation.y=angLerp(u.head.rotation.y,0,dt*3); }
     if(d.aura){ const R2=14*14; for(const e of enemies){ if(e.dead) continue; const dx=e.x-u.x,dz=e.z-u.z; if(dx*dx+dz*dz<R2){ e.slowMul=e.slowT>0?Math.min(e.slowMul,1-d.aura):1-d.aura; e.slowT=Math.max(e.slowT,0.4); } }
       if(u.g.userData.dish) u.g.userData.dish.rotation.y+=dt*2.5; }
+    if(d.stealth&&u.g.userData.fade){ const want=u.seenT>0?1:0.38; for(const m of u.g.userData.fade) m.opacity+=(want-m.opacity)*Math.min(1,dt*6); }
     if(u.g.userData.hover) u.g.children[0].position.y=0.9+Math.sin(S.time*3+u.x)*0.08;
     if(d.spot){ const R2=d.spot*d.spot; for(const e of enemies){ if(e.dead) continue; const dx=e.x-u.x,dz=e.z-u.z; if(dx*dx+dz*dz<R2){ if(e.def.cloak) e.revealT=Math.max(e.revealT||0,0.6); if(e.burrowed) e.spotT=0.6; } }
       if(u.g.userData.rotors) for(const r of u.g.userData.rotors) r.rotation.y+=dt*40; }
@@ -2367,6 +2380,7 @@ function getGhost(type){
 }
 function unlocked(t){ return LV().towers.includes(t); }
 function setBuild(type){
+  hideCardTip();
   if(type) S.aiming=false;
   if(type&&!unlocked(type)){ sfx('deny'); banner(BUILD[type].name+' is locked','It unlocks in Level '+TOWER_LEVEL[type]+'.',''); type=null; }
   S.build=type; for(const k in ghosts) ghosts[k].visible=false;
@@ -2379,7 +2393,7 @@ function placeCheck(type,x,z,rot){
   if(!player.alive) return 'Rover is down';
   if(!unlocked(type)) return 'Locked';
   if(S.supply<def.cost) return 'Need '+def.cost+' supply';
-  if(def.unit&&units.length>=UNIT_CAP) return 'Unit limit reached ('+UNIT_CAP+')';
+  if(def.unit&&units.length>=unitCap()) return 'Unit limit reached ('+unitCap()+'). Hold more outposts to raise it';
   if(Math.hypot(x-player.x,z-player.z)>BUILD_R) return 'Too far from rover';
   if(Math.abs(x)>MAP-4||Math.abs(z)>MAP-4) return 'Outside the sector';
   let pts=[[x,z]], rad=def.radius;
@@ -2389,9 +2403,12 @@ function placeCheck(type,x,z,rot){
   if(foeCore&&!foeCore.dead&&Math.hypot(x-foeCore.x,z-foeCore.z)<26) return 'Inside enemy ramparts';
   return null;
 }
+let lastUnitClick={u:null,t:0};
 function clickAt(ndc,sc){
   if(S.aiming){ const p=pickGround(ndc); if(p) useAbility('strike',p.x,p.z); return; }
-  if(!S.build&&sc){ const u=unitAtScreen(sc.x,sc.y); if(u){ if(sc.shift&&selUnits.includes(u)) setUnitSel(selUnits.filter(o=>o!==u)); else setUnitSel([u],!!sc.shift); return; } }
+  if(!S.build&&sc){ const u=unitAtScreen(sc.x,sc.y); if(u){ const now=performance.now(), dbl=lastUnitClick.u&&lastUnitClick.u.type===u.type&&now-lastUnitClick.t<380; lastUnitClick={u,t:now};
+    if(dbl){ setUnitSel(units.filter(o=>o.alive&&o.type===u.type),!!sc.shift); floatText(u.x,H(u.x,u.z)+u.def.barY+1.5,u.z,'All '+selUnits.length+' selected',COL.ally); return; }
+    if(sc.shift&&selUnits.includes(u)) setUnitSel(selUnits.filter(o=>o!==u)); else setUnitSel([u],!!sc.shift); return; } }
   const p=pickGround(ndc); if(!p) return;
   if(S.build){
     const why=placeCheck(S.build,p.x,p.z,S.rot);
@@ -2483,6 +2500,23 @@ function refreshSel(force){
 }
 
 // tray
+function cardTipHTML(t){
+  const d=BUILD[t], lock=!unlocked(t), dps=d.dmg&&d.rate?d.dmg*(d.twin?2:1)/d.rate:0, st=[];
+  st.push('Hull <b>'+d.hp+'</b>');
+  if(d.range) st.push('Range <b>'+d.range+' m</b>');
+  if(d.dmg) st.push('Damage <b>'+d.dmg+(d.twin?' &times;2':'')+'</b>'+(dps?' ('+(dps<10?dps.toFixed(1):Math.round(dps))+'/s)':''));
+  if(d.heal) st.push('Repairs <b>'+d.heal+'</b>/s');
+  if(d.unit) st.push('Speed <b>'+d.speed+'</b>'+(d.fly?' &middot; flies':''));
+  return '<div class="ctH"><b>'+d.name+'</b><span>'+(lock?'Unlocks in Level '+TOWER_LEVEL[t]:d.cost+' supply')+'</span></div><p>'+d.blurb+'</p>'+(d.note?'<p class="ctN">'+d.note+'</p>':'')+'<div class="ctS">'+st.map(x=>'<span>'+x+'</span>').join('')+'</div>';
+}
+let tipEl=null;
+function showCardTip(b){
+  if(!tipEl){ tipEl=document.createElement('div'); tipEl.id='cardTip'; document.body.appendChild(tipEl); }
+  tipEl.innerHTML=cardTipHTML(b.dataset.type); tipEl.hidden=false;
+  const r=b.getBoundingClientRect(), w=tipEl.offsetWidth;
+  tipEl.style.left=Math.round(clamp(r.left+r.width/2-w/2,8,innerWidth-w-8))+'px'; tipEl.style.bottom=Math.round(innerHeight-r.top+10)+'px';
+}
+function hideCardTip(){ if(tipEl) tipEl.hidden=true; }
 function tabOf(t){ const d=BUILD[t]; return !d.unit?'build':d.veh?'vehicles':'infantry'; }
 function setTrayTab(tab){ const tray=$('tray'); tray.dataset.tab=tab; tray.querySelectorAll('.trayTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab)); }
 (function buildTray(){
@@ -2495,7 +2529,10 @@ function setTrayTab(tab){ const tray=$('tray'); tray.dataset.tab=tab; tray.query
     const d=BUILD[t];
     if(d.unit&&!tray.querySelector('.traySep')){ const sep=document.createElement('div'); sep.className='traySep'; tray.appendChild(sep); }
     const b=document.createElement('button'); b.type='button'; b.className='card'+(d.unit?(d.veh?' unit veh':' unit inf'):''); b.dataset.type=t; b.title=d.blurb;
-    b.innerHTML='<kbd>'+d.key+'</kbd><svg viewBox="0 0 24 24">'+d.icon+'</svg><span class="nm">'+d.name+'</span><span class="cost">'+d.cost+'</span>';
+    b.innerHTML='<kbd>'+d.key+'</kbd><svg viewBox="0 0 24 24">'+d.icon+'</svg><span class="nm">'+d.name+'</span><span class="cost">'+d.cost+'</span>'+(d.unit?'<span class="cnt"></span>':'');
+    b.removeAttribute('title');
+    b.addEventListener('pointerenter',e=>{ if(e.pointerType==='mouse') showCardTip(b); });
+    b.addEventListener('pointerleave',hideCardTip);
     b.addEventListener('click',()=>{initAudio(); setBuild(S.build===t?null:t); b.blur();});
     b.dataset.base=d.cost;
     tray.appendChild(b);
@@ -2503,12 +2540,13 @@ function setTrayTab(tab){ const tray=$('tray'); tray.dataset.tab=tab; tray.query
   setTrayTab('build');
 })();
 function refreshTray(){
+  const cap=unitCap(), cnt={}; for(const u of units) if(u.alive) cnt[u.type]=(cnt[u.type]||0)+1;
   document.querySelectorAll('.card').forEach(c=>{
+    if(BUILD[c.dataset.type].unit){ const n=cnt[c.dataset.type]||0, el=c.querySelector('.cnt'), w=n?'×'+n:''; if(el.textContent!==w) el.textContent=w; }
     const t=c.dataset.type, lock=!unlocked(t);
-    c.classList.toggle('locked',lock); c.classList.toggle('poor',!lock&&(S.supply<BUILD[t].cost||(BUILD[t].unit&&units.length>=UNIT_CAP)));
+    c.classList.toggle('locked',lock); c.classList.toggle('poor',!lock&&(S.supply<BUILD[t].cost||(BUILD[t].unit&&units.length>=cap)));
     const cost=c.querySelector('.cost'), want=lock?'Level '+TOWER_LEVEL[t]:String(BUILD[t].cost);
     if(cost.textContent!==want) cost.textContent=want;
-    c.title=lock?'Unlocks in Level '+TOWER_LEVEL[t]:BUILD[t].blurb;
   });
 }
 
@@ -2960,7 +2998,7 @@ const GUIDE=[
     const rows=ORDER.filter(t=>BUILD[t].unit&&t!=='tank').map(t=>{ const d=BUILD[t]; return '<tr class="unitrow"><td class="nm"><svg viewBox="0 0 24 24">'+d.icon+'</svg>'+d.name+'</td><td class="num">'+d.cost+'</td><td class="num">'+d.range+' m</td><td class="num">Level '+TOWER_LEVEL[t]+'</td><td>'+d.blurb+'</td></tr>'; }).join('');
     const tanks=TANK_TIERS.map((t,i)=>'<tr class="unitrow"><td class="nm"><svg viewBox="0 0 24 24">'+BUILD.tank.icon+'</svg>Mk '+t.mk+' '+t.name+'</td><td class="num">'+t.cost+'</td><td class="num">'+t.range+' m</td><td class="num">'+['Level 3','Level 5','Level 7'][i]+'</td><td>'+t.blurb+'</td></tr>').join('');
     return `<h2>Units</h2>
-    <p>Units deploy like structures, inside the rover's ring, up to <b>${UNIT_CAP}</b> at once. Unlike towers, you can move them.</p>
+    <p>Units deploy like structures, inside the rover's ring, up to <b>${UNIT_CAP}</b> at once, plus <b>2</b> for every outpost you still hold (at most <b>${UNIT_CAP_MAX}</b>). Unlike towers, you can move them.</p>
     <h3>Orders</h3>
     <ol><li><b>Select</b>: click a unit, Shift-click to add more, drag a box, or press ${kb('Tab')} for all.</li>
       <li><b>Send</b>: right-click the ground, or click the sector map to send them anywhere. They spread into a formation.</li>
@@ -3696,7 +3734,7 @@ function updateHud(){
   const pF=player.alive?player.hp/player.maxHp:0; $('pBar').style.width=(pF*100).toFixed(1)+'%'; setText('pTxt',player.alive?Math.ceil(pF*100)+'%':'Down');
   setText('supply',String(Math.floor(S.supply)));
   setText('income','+'+(1.0+pumpIncome).toFixed(1)+'/s');
-  setText('unitCount','Units '+units.length+'/'+UNIT_CAP);
+  setText('unitCount','Units '+units.length+'/'+unitCap());
   const lb=$('launchBtn');
   $('foeTxt').parentElement.parentElement.hidden=!!(S.vs||S.training);
   if(S.training){ setText('lvlNo','Training'); setText('waveNum',(trIdx+1)+' / '+TSTEPS.length); setText('statusTxt','Follow the training card at the top.'); lb.hidden=true; }
