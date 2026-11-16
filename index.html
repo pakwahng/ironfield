@@ -414,7 +414,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div id="unitPanel" class="panel" hidden>
       <h3 id="unitTitle">1 unit</h3>
       <div id="unitStats"></div>
-      <div id="unitBtns"><button id="followBtn" type="button">Follow rover</button><button id="allBtn" type="button">All units</button><button id="dismissBtn" type="button">Dismiss</button><button id="clearBtn" type="button">Done</button><button id="uUpBtn" type="button" style="grid-column:1 / -1">Upgrade</button></div>
+      <div id="unitBtns"><button id="followBtn" type="button">Follow rover</button><button id="holdBtn" type="button">Hold ground</button><button id="allBtn" type="button">All units</button><button id="dismissBtn" type="button">Dismiss</button><button id="clearBtn" type="button">Done</button><button id="uUpBtn" type="button" style="grid-column:1 / -1">Upgrade</button></div>
     </div>
 
     <div id="help" class="panel">
@@ -424,7 +424,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
       <b>Right-click</b> cancel placing &nbsp; <b>T</b> rebuild ruins<br>
       <b>Drag</b> box-select units &nbsp; <b>Double-click</b> a unit to pick all of its type &nbsp; <b>Tab</b> all units<br>
-      <b>Right-click</b> move units &nbsp; <b>G</b> follow rover<br>
+      <b>Right-click</b> move units &nbsp; <b>G</b> follow rover &nbsp; <b>\</b> hold ground<br>
       <b>U</b> upgrade (towers or units) &nbsp; <b>X</b> sell or dismiss<br>
       <b>Space</b> launch wave &nbsp; <b>F</b> speed &nbsp; <b>P</b> pause<br>
       <b>Z</b> airstrike &nbsp; <b>C</b> repair pulse &nbsp; <b>V</b> EMP<br>
@@ -812,6 +812,8 @@ const M={
   hull:std(0xd2c9ab), hullDark:std(0x566069), steel:std(0x8c949a),
   ally:std(COL.ally,{emissive:COL.ally,emissiveIntensity:0.6}),
   tesla:std(0xcfeeff,{emissive:0x8fd8ff,emissiveIntensity:1.1}),
+  mend:new THREE.MeshStandardMaterial({color:0x7dffa0,emissive:0x3dff70,emissiveIntensity:1,flatShading:true}),
+  mendRing:new THREE.MeshBasicMaterial({color:0x7dffa0,transparent:true,opacity:0.18,depthWrite:false,side:THREE.DoubleSide}),
   ward:new THREE.MeshBasicMaterial({color:0xc58cff,transparent:true,opacity:0.22,depthWrite:false,side:THREE.DoubleSide}),
   frost:std(0x9fe8f0,{emissive:0x5fd1e0,emissiveIntensity:0.9,transparent:true,opacity:0.92}),
   amber:std(COL.signal,{emissive:COL.signal,emissiveIntensity:0.55}),
@@ -899,10 +901,12 @@ const UNIT_CAP=12, UNIT_CAP_MAX=20;
 function unitCap(){ return Math.min(UNIT_CAP_MAX, UNIT_CAP+2*sites.filter(s=>s.alive&&!s.isHQ).length); }
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
 const OUTDEF={name:'Outpost',hp:2200,radius:4.4,barY:9};
-const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],boss:['boss','bosses']};
+const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],mender:['mender','menders'],stalker:['stalker','stalkers'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],boss:['boss','bosses']};
 const FOE_TIPS={
   sapper:['Sappers sighted','They sprint at your structures and blow up. Kill them before they arrive.'],
   warden:['Wardens sighted','Their purple field halves damage to every hostile inside it. Kill the Warden first, or use Tesla Coils.'],
+  mender:['Menders sighted','Their green field repairs every hostile inside it. Snipers, Commandos and Rail Cannons can pick them off from range.'],
+  stalker:['Stalkers sighted','Fast hunters that go for your squads and ignore your towers. Keep troops near guns, or use Bulwarks to draw them.'],
   wasp:['Wasp drones sighted','They fly over barricades. Mortars and tanks cannot hit them. Use sentries, rifles or Flak.'],
   brood:['Broods sighted','When a Brood dies it bursts into a swarm of mites. Keep guns on the spot.'],
   juggernaut:['Juggernauts sighted','Armour shrugs off half of all small-arms fire. Use mortars, tanks, rockets, Tesla or the Rail Cannon.'],
@@ -934,6 +938,8 @@ const FOES={
   juggernaut:{hp:950,speed:2.6,dmg:55,rate:2.4,range:18,atk:'shell',splash:3.2,reward:40,r:1.9,aggro:24,barY:4.6,armour:0.5},
   phantom:{hp:120,speed:9,dmg:24,rate:0.8,range:1.3,atk:'melee',reward:12,r:0.8,aggro:30,barY:2.6,cloak:true},
   burrower:{hp:300,speed:6.5,dmg:30,rate:1.0,range:1.8,atk:'melee',cleave:2.2,reward:22,r:1.2,aggro:80,barY:2.8,burrow:true},
+  mender:{hp:140,speed:4.2,dmg:6,rate:1.2,range:12,atk:'shot',reward:14,r:0.9,aggro:16,barY:3.3,mend:10},
+  stalker:{hp:170,speed:11,dmg:26,rate:0.8,range:1.4,atk:'melee',reward:12,r:0.8,aggro:45,barY:2.2,hunter:true},
   carrier:{hp:950,speed:3,dmg:0,rate:99,range:16,atk:'none',reward:50,r:2.4,aggro:20,barY:2.8,fly:true,carrier:7},
 };
 
@@ -1040,6 +1046,16 @@ function modelFoe(type){
     part(G.box,M.foe,0.9,0.9,1.2,0,0.7,0,body);
     const orb=part(G.ico,M.foeGlow,0.55,0.55,0.55,0,1.45,0.2,body); orb.castShadow=false; body.userData.orb=orb;
     part(G.box,M.foeDark,0.25,0.5,0.25,-0.3,0.25,0,body); part(G.box,M.foeDark,0.25,0.5,0.25,0.3,0.25,0,body);
+  } else if(type==='mender'){
+    part(G.box,M.foe,1.0,1.8,0.9,0,1.3,0,body); part(G.box,M.foeDark,0.7,0.55,0.7,0,2.5,0,body);
+    part(G.box,M.foeDark,1.4,0.5,0.6,0,1.9,0.5,body);
+    part(G.box,M.mend,0.5,0.14,0.1,0,2.0,-0.47,body).castShadow=false; part(G.box,M.mend,0.14,0.5,0.1,0,2.0,-0.47,body).castShadow=false;
+    const ring=new THREE.Mesh(ringGeo,M.mendRing); ring.scale.setScalar(FOES.mender.mend); ring.position.y=0.3; g.add(ring);
+  } else if(type==='stalker'){
+    part(G.box,M.foe,0.9,0.7,2.0,0,1.0,0,body); part(G.box,M.foeDark,0.7,0.55,0.8,0,1.25,-1.1,body);
+    part(G.box,M.foeGlow,0.5,0.1,0.06,0,1.3,-1.52,body).castShadow=false;
+    for(const [x,z] of [[-0.4,-0.7],[0.4,-0.7],[-0.4,0.7],[0.4,0.7]]) part(G.box,M.foeDark,0.22,0.8,0.22,x,0.4,z,body);
+    part(G.box,M.foeDark,0.12,0.12,0.9,0,1.3,1.3,body).rotation.x=-0.5;
   } else if(type==='warden'){
     part(G.box,M.foe,1.2,2,1,0,1.4,0,body); part(G.box,M.foeDark,0.8,0.6,0.8,0,2.7,0,body);
     part(G.box,M.foeDark,1.6,1.8,0.25,0,1.5,-0.7,body);
@@ -1474,6 +1490,9 @@ const MEDALS=[
   ['ironwill','Iron will','Reach wave 20 in Endless.'],
   ['campaign','Sector secured','Clear all ten campaign levels.'],
   ['combined','Combined arms','Field six different unit types at once.'],
+  ['ghost','Ghost','Score 10 kills with a single Commando.'],
+  ['skyguard','Sky guard','Bring down a Carrier with a Stinger Team.'],
+  ['wrecker','Wrecker','Destroy an enemy HQ structure with a Demolition Team.'],
 ];
 let toastT=0;
 function award(id){
@@ -1504,7 +1523,7 @@ function saveGame(){
     rebuildAt:S.rebuildAt||0,rebuilds:S.rebuilds||0,
     sites:sites.map(st=>({alive:st.alive,hp:Math.round(st.hp)})),
     structs:structures.filter(st=>!st.isSite).map(st=>({tm:st.tmode||null,t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
-    units:units.map(u=>({t:u.type,x:+u.x.toFixed(1),z:+u.z.toFixed(1),k:u.rank,hp:Math.round(u.hp),sp:u.spent,m:u.mode,px:+u.postX.toFixed(1),pz:+u.postZ.toFixed(1)})),
+    units:units.map(u=>({t:u.type,x:+u.x.toFixed(1),z:+u.z.toFixed(1),k:u.rank,hp:Math.round(u.hp),sp:u.spent,m:u.mode,h:u.hold?1:0,px:+u.postX.toFixed(1),pz:+u.postZ.toFixed(1)})),
     foe:foeCore?{coreDead:!!foeCore.dead,parts:foeStructs.filter(f=>!f.dead).map(f=>({i:f.idx,hp:Math.round(f.hp)}))}:null};
   try{ localStorage.setItem(SAVE_KEY,JSON.stringify(sv)); }catch(e){}
 }
@@ -1522,7 +1541,7 @@ function continueGame(){
     if(st.level>1){ st.maxHp=Math.round(st.def.hp*lvlMul(st,0.35)); st.g.scale.setScalar(1+0.09*(st.level-1)); } st.hp=Math.min(st.maxHp,d.hp); });
   restoring=true;
   sv.units.forEach(d=>{ if(!BUILD[d.t]||!BUILD[d.t].unit) return; const u=addUnit(d.t,d.x,d.z); u.rank=d.k||1; u.spent=d.sp||u.spent;
-    u.maxHp=Math.round(u.def.hp*(1+0.3*(u.rank-1))); u.hp=Math.min(u.maxHp,d.hp); u.mode=d.m==='follow'?'follow':'guard'; u.postX=d.px; u.postZ=d.pz; });
+    u.maxHp=Math.round(u.def.hp*(1+0.3*(u.rank-1))); u.hp=Math.min(u.maxHp,d.hp); u.mode=d.m==='follow'?'follow':'guard'; u.hold=!!d.h; u.postX=d.px; u.postZ=d.pz; });
   restoring=false;
   reslotFollowers();
   if(sv.foe&&foeCore){
@@ -1579,6 +1598,7 @@ function waveCounts(n,lvl){
   const c=baseCounts(n,lvl), mix=LV().mix;
   const late=lvl>=5||!!LV().endless; c.juggernaut=(late&&n>=6)?Math.floor((n-4)/3):0; c.phantom=(late&&n>=7)?Math.floor((n-4)/2):0;
   c.burrower=((lvl>=6||LV().endless)&&n>=6)?Math.floor((n-4)/3):0; c.carrier=((lvl>=7||LV().endless)&&n>=8)?Math.floor((n-6)/4):0;
+  c.mender=((lvl>=3||LV().endless)&&n>=5)?Math.floor((n-2)/3):0; c.stalker=((lvl>=4||LV().endless)&&n>=4)?Math.floor((n-1)/2):0;
   if(mix) for(const k in mix) if(c[k]!==undefined) c[k]=Math.round(c[k]*mix[k]);
   return c;
 }
@@ -1701,7 +1721,8 @@ function hurtEnemy(e,dmg,pierce,small){
   if(e.dead) return; if(e.burrowed) surface(e); if(small&&e.def.armour) dmg*=e.def.armour; if(e.def.cloak) e.revealT=2.5; if(!pierce&&e.warded>0) dmg*=0.5; e.hp-=dmg; e.flash=0.08;
   if(e.hp<=0){
     e.dead=true; S.kills++; S.supply+=e.def.reward;
-    if(curSrc){ curSrc.kills=(curSrc.kills||0)+1; const cat=curSrc===player?'rover':curSrc.isUnit?'units':curSrc.ability?'abilities':'defences'; S.kcat=S.kcat||{}; S.kcat[cat]=(S.kcat[cat]||0)+1; }
+    if(curSrc){ curSrc.kills=(curSrc.kills||0)+1; const cat=curSrc===player?'rover':curSrc.isUnit?'units':curSrc.ability?'abilities':'defences'; S.kcat=S.kcat||{}; S.kcat[cat]=(S.kcat[cat]||0)+1;
+      if(!S.training){ if(curSrc.type==='commando'&&curSrc.kills>=10) award('ghost'); if(curSrc.type==='stinger'&&e.type==='carrier') award('skyguard'); } }
     shatter(e.x,y0Of(e),e.z,e.type==='boss'?14:e.def.r>1.2?7:4,e.type==='boss'?M.boss:M.foe,Math.max(1,e.def.r*1.4));
     if(e.def.brood) for(let k=0;k<e.def.brood;k++) pendingSpawns.push({t:'mite',x:e.x+rand(-1.6,1.6),z:e.z+rand(-1.6,1.6),home:e.home});
     const y=H(e.x,e.z);
@@ -1913,6 +1934,7 @@ function hurtFoe(f,dmg){
   if(f.hp<=0) killFoe(f);
 }
 function killFoe(f){
+  if(curSrc&&curSrc.type==='demo'&&!S.training) award('wrecker');
   f.dead=true; scene.remove(f.g); shatter(f.x,H(f.x,f.z)+2,f.z,f.kind==='core'?24:8,M.foeDark,f.kind==='core'?3:1.6);
   if(S.sel===f) select(null);
   const y=H(f.x,f.z);
@@ -2070,7 +2092,7 @@ function updateUnits(dt){
       if(d.wrecker){ let fb=null,fd=uRange(u)+0.01; const sh=shielded(); for(const f of foeStructs){ if(f.dead||(f.kind==='core'&&sh)) continue; const dd=Math.max(0,cpoint(f,u.x,u.z).d); if(dd<fd){fd=dd;fb=f;} } if(fb) u.tgt=fb; }
       if(u.type==='sniper'){ let best=null,bh=0; const R2=uRange(u)*uRange(u); for(const e of enemies){ if(e.dead||e.cloaked) continue; const dx=e.x-u.x,dz=e.z-u.z; if(dx*dx+dz*dz<R2&&e.hp>bh){bh=e.hp;best=e;} } if(best) u.tgt=best; }
       u.chase=null;
-      if(!u.tgt&&u.mode==='guard'){ const e=nearestEnemy(u.postX,u.postZ,uRange(u)+12,0,ground); if(e) u.chase=e; }
+      if(!u.tgt&&u.mode==='guard'&&!u.hold){ const e=nearestEnemy(u.postX,u.postZ,uRange(u)+12,0,ground); if(e) u.chase=e; }
     }
     let gx,gz,stop=1.2;
     if(u.mode==='follow'&&player.alive){
@@ -2169,22 +2191,26 @@ function refreshUnitPanel(force){
   const counts={}; let hp=0,mhp=0; selUnits.forEach(u=>{counts[u.def.name]=(counts[u.def.name]||0)+1; hp+=u.hp; mhp+=u.maxHp;});
   const follow=selUnits.every(u=>u.mode==='follow'), refund=selUnits.reduce((a,u)=>a+Math.round(u.spent*0.5),0);
   const ups=selUnits.filter(u=>u.rank<3), upCost=ups.reduce((a,u)=>a+uUpCost(u),0), ranks=selUnits.map(u=>u.rank).join('');
-  const key=[selUnits.length,Object.entries(counts).join(),Math.ceil(hp/mhp*50),follow,refund,isTouch,ranks,S.supply>=Math.min(...ups.map(uUpCost).concat([1e9]))].join('|');
+  const hold=selUnits.every(u=>u.hold);
+  const key=[hold,selUnits.length,Object.entries(counts).join(),Math.ceil(hp/mhp*50),follow,refund,isTouch,ranks,S.supply>=Math.min(...ups.map(uUpCost).concat([1e9]))].join('|');
   if(!force&&key===unitCache) return; unitCache=key;
   $('unitTitle').textContent=selUnits.length===1?selUnits[0].def.name:selUnits.length+' units';
   const lines=[];
   if(selUnits.length>1) lines.push(Object.entries(counts).map(([n,c])=>c+' × '+n).join(', '));
-  lines.push('Health <b>'+Math.round(hp/mhp*100)+'%</b> &middot; '+(follow?'<b>Following the rover</b>':'<b>Guarding</b> a post'));
+  lines.push('Health <b>'+Math.round(hp/mhp*100)+'%</b> &middot; '+(follow?'<b>Following the rover</b>':hold?'<b>Holding ground</b>, will not chase':'<b>Guarding</b> a post'));
   if(selUnits.length===1&&selUnits[0].def.note) lines.push(selUnits[0].def.note);
   if(selUnits.length===1){ const u=selUnits[0], d=u.def; lines.push('Rank <b>'+u.rank+' / 3</b> &middot; Range <b>'+Math.round(uRange(u))+' m</b> &middot; Damage <b>'+Math.round(uDmg(u))+'</b>'+(d.twin?' &times;2':'')+(d.heal?' &middot; Repairs <b>'+Math.round(d.heal*(1+0.35*(u.rank-1)))+'/s</b>':'')+(d.coax?' &middot; anti-air MG':'')); }
   else lines.push('Ranks: '+[1,2,3].map(r=>selUnits.filter(u=>u.rank===r).length+' &times; '+r).filter(x=>!x.startsWith('0')).join(', '));
   lines.push(isTouch?'Tap open ground to send them.':'Right-click the ground to send them.');
   $('unitStats').innerHTML=lines.join('<br>');
   const fb=$('followBtn'); fb.classList.toggle('on',follow); fb.textContent=follow?'Stop following':'Follow rover';
+  const hb=$('holdBtn'); hb.classList.toggle('on',hold); hb.textContent=hold?'Free to chase':'Hold ground';
   $('dismissBtn').textContent='Dismiss · +'+refund;
   const ub=$('uUpBtn'); ub.textContent=ups.length?'Upgrade'+(ups.length>1?' '+ups.length:'')+' · '+upCost:'Max rank'; ub.disabled=!ups.length||S.supply<Math.min(...ups.map(uUpCost));
 }
 $('followBtn').addEventListener('click',e=>{e.currentTarget.blur(); toggleFollow();});
+function toggleHold(){ if(!selUnits.length) return; const all=selUnits.every(u=>u.hold); selUnits.forEach(u=>{ u.hold=!all; if(u.hold) u.chase=null; }); refreshUnitPanel(true); }
+$('holdBtn').addEventListener('click',e=>{e.currentTarget.blur(); toggleHold();});
 $('allBtn').addEventListener('click',e=>{e.currentTarget.blur(); setUnitSel(units.slice());});
 $('dismissBtn').addEventListener('click',e=>{e.currentTarget.blur(); dismissUnits();});
 $('uUpBtn').addEventListener('click',e=>{e.currentTarget.blur(); upgradeUnits();});
@@ -2336,6 +2362,7 @@ window.addEventListener('keydown',e=>{
   else if(k==='Escape'){ if(S.aiming) S.aiming=false; else if(S.build) setBuild(null); else if(selUnits.length) setUnitSel([]); else if(S.sel) select(null); else togglePause(); }
   else if(k==='Tab'){ e.preventDefault(); setUnitSel(units.slice()); }
   else if(k==='KeyG') toggleFollow();
+  else if(k==='Backslash') toggleHold();
   else if(k==='KeyF') toggleSpeed();
   else if(k==='KeyH') toggleHelp();
   else if(k==='KeyT') rebuildAll();
@@ -2930,6 +2957,8 @@ const FOE_GUIDE={
   siege:['shell','Artillery. Lobs splash shells from 25 m, beyond basic sentries.','Mortars (44 m), tanks, airstrikes or the rover. Rank-3 sentries reach 27 m.'],
   sapper:['blast','Sprints at your nearest structure and explodes. Ignores troops and the rover.','Kill it early. Barricades in front take the blast instead of your guns.'],
   warden:['shot','Its purple field halves damage to every hostile inside it.','Kill the Warden first. Tesla Coils pierce the field.'],
+  mender:['shot','Its green field repairs every hostile inside it, a few percent of their hull each second.','Kill it first from range: Snipers, Commandos, Rail Cannon, Stingers.'],
+  stalker:['melee','Fast hunter. Charges your squads and ignores towers while any squad is within 45 m.','Keep squads inside tower cover. Bulwarks draw it in, Shock Troopers stun it.'],
   wasp:['air','Flying drone. Crosses barricades. Mortars and tanks cannot hit it.','Sentries, Rifle Squads, Rocket Squads, Flak Batteries, Titan machine guns.'],
   brood:['melee','Heavy beast with a cleaving swing. Bursts into five mites when it dies.','Keep guns on the spot. Frost and Tesla mop up the mites.'],
   juggernaut:['shell','Armoured tank. Small arms do half damage to it. Shells from 18 m.','Mortars, tanks, Rocket Squads, Tesla, Rail Cannon, airstrikes.'],
@@ -2938,7 +2967,7 @@ const FOE_GUIDE={
   phantom:['melee','Cloaked raider. Invisible until it is within 12 m of your forces, or until hit.','Frost Pylons, mortar splash and EMP reveal it. Then anything can kill it.'],
   boss:['melee','Every 5th wave or so. Cleaving melee plus a three-shell barrage every 6 s.','Rail Cannon, tanks, airstrike, EMP to buy time. Keep troops spread out.'],
 };
-const FOE_FIRST={burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
+const FOE_FIRST={mender:'Level 4',stalker:'Level 5',burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
 const GUIDE=[
   {id:'goal',name:'Goal',html:()=>`
     <h2>Hold the line</h2>
@@ -2962,7 +2991,7 @@ const GUIDE=[
         <li>Click a structure to inspect, ${kb('U')} upgrade, ${kb('X')} sell</li>
         <li>Click or drag a box to select units, ${kb('Tab')} selects all</li>
         <li>Right-click ground or click the sector map to send units</li>
-        <li>${kb('G')} units follow the rover, ${kb('X')} dismiss, ${kb('U')} upgrade</li>
+        <li>${kb('G')} units follow the rover, ${kb('\\')} hold ground (no chasing), ${kb('X')} dismiss, ${kb('U')} upgrade. Double-click a unit to select all of its type</li>
         <li>${kb('Z')} airstrike, ${kb('C')} repair pulse, ${kb('V')} EMP</li>
         <li>${kb('Space')} launch the next wave early, ${kb('F')} 2× speed</li>
         <li>${kb('P')} pause, ${kb('M')} sound, ${kb('H')} keys panel, ${kb('Esc')} cancel</li>
@@ -3003,7 +3032,8 @@ const GUIDE=[
     <ol><li><b>Select</b>: click a unit, Shift-click to add more, drag a box, or press ${kb('Tab')} for all.</li>
       <li><b>Send</b>: right-click the ground, or click the sector map to send them anywhere. They spread into a formation.</li>
       <li><b>Guard</b>: once there, they hold the spot, chase hostiles that come near, then return.</li>
-      <li><b>Follow</b>: press ${kb('G')} and they escort the rover as you travel.</li></ol>
+      <li><b>Follow</b>: press ${kb('G')} and they escort the rover as you travel.</li>
+      <li><b>Hold ground</b>: press ${kb('\\')} and they stay put and only shoot what comes in range, instead of chasing. Good for keeping squads under tower cover when Stalkers are about.</li></ol>
     <h3>Ranks</h3>
     <p>Select units and press ${kb('U')} to upgrade them, up to rank 3. Each rank adds 30% health, 35% damage and 10% range. The rover must be close. Dismissing refunds half of everything spent.</p>
     <div class="gwrap"><table class="gtable"><thead><tr><th>Unit</th><th>Cost</th><th>Range</th><th>Unlocks</th><th>Role</th></tr></thead><tbody>${rows}${tanks}</tbody></table></div>
@@ -3368,6 +3398,10 @@ function updateProjectiles(dt){
 // ---------------------------------------------------------------- update: enemies
 function chooseTarget(e){
   const d=e.def;
+  if(d.hunter){
+    let hb=null,hd=d.aggro; for(const u of units){ if(!u.alive||u.def.fly) continue; const dd=Math.hypot(u.x-e.x,u.z-e.z)-u.radius; if(u.def.stealth&&!(u.seenT>0)&&dd>3) continue; if(dd<hd){hd=dd;hb=u;} }
+    if(hb) return hb;
+  }
   if(d.sapper||d.burrow&&e.burrowed){
     // sappers ignore the rover and troops and go for the nearest structure, outposts included
     let best=null,bd=d.aggro; for(const s of structures){ const c=cpoint(s,e.x,e.z).d; if(c<bd){bd=c;best=s;} }
@@ -3424,6 +3458,8 @@ function updateEnemies(dt){
   for(const e of enemies){ if(e.warded>0) e.warded-=dt; }
   for(const w of enemies){ if(w.dead||!w.def.aura) continue; const R2=w.def.aura*w.def.aura;
     for(const o of enemies){ if(o.dead||o===w) continue; const dx=o.x-w.x,dz=o.z-w.z; if(dx*dx+dz*dz<R2) o.warded=0.3; } }
+  for(const m of enemies){ if(m.dead||!m.def.mend) continue; const R2=m.def.mend*m.def.mend;
+    for(const o of enemies){ if(o.dead||o===m||o.hp>=o.maxHp) continue; const dx=o.x-m.x,dz=o.z-m.z; if(dx*dx+dz*dz<R2){ o.hp=Math.min(o.maxHp,o.hp+Math.min(o.maxHp*0.04,22)*dt); if(Math.random()<dt*1.5) floatText(o.x,y0Of(o)+o.def.barY*0.6,o.z,'+',0x7dffa0); } } }
   for(const e of enemies){
     if(e.dead) continue;
     const d=e.def;
@@ -3686,7 +3722,7 @@ function drawMinimap(){
     c.beginPath(); if(s.isHQ){ c.rect(x-r,z-r,r*2,r*2); } else { c.moveTo(x,z-r); c.lineTo(x+r,z); c.lineTo(x,z+r); c.lineTo(x-r,z); c.closePath(); } c.fill();
     c.strokeStyle='#1b232c'; c.lineWidth=2; c.stroke();
   }
-  for(const e of enemies){ if(e.cloaked) continue; const r=e.type==='boss'||e.type==='juggernaut'?6:(e.type==='brute'||e.type==='brood')?4.5:e.type==='mite'?2.2:3.2; c.fillStyle=e.def.fly?'#ff9ac0':e.type==='warden'?'#c58cff':'#e3623f'; c.beginPath(); c.arc(X(e.x),Z(e.z),r,0,TAU); c.fill(); }
+  for(const e of enemies){ if(e.cloaked) continue; const r=e.type==='boss'||e.type==='juggernaut'?6:(e.type==='brute'||e.type==='brood')?4.5:e.type==='mite'?2.2:3.2; c.fillStyle=e.def.fly?'#ff9ac0':e.type==='warden'?'#c58cff':e.type==='mender'?'#7dffa0':'#e3623f'; c.beginPath(); c.arc(X(e.x),Z(e.z),r,0,TAU); c.fill(); }
   for(const u of units){ c.fillStyle=selUnits.includes(u)?'#ffffff':'#5fd1c1'; c.beginPath(); c.arc(X(u.x),Z(u.z),u.type==='tank'?4.5:3.5,0,TAU); c.fill(); }
   if(player.alive){
     const px=X(player.x), pz=Z(player.z);
