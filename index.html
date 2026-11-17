@@ -231,7 +231,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .pkCard b{font-family:var(--display);font-size:14px}
 .pkCard span{font-size:12px;color:var(--mute);line-height:1.4}
 .pkNote{margin-top:10px;font-size:11px;color:var(--mute)}
-@media (max-width:560px){ .pkCards{grid-template-columns:1fr} #perkPick{top:auto;bottom:12px;transform:translateX(-50%)} }
+@media (max-width:560px){ .pkCards{grid-template-columns:1fr;gap:6px} #perkPick{top:auto;bottom:12px;transform:translateX(-50%);padding:12px} .pkCard{grid-template-columns:22px 1fr;column-gap:10px;row-gap:2px;padding:9px 10px} .pkCard svg{width:22px;height:22px;grid-row:span 2} .pkCard span{font-size:11.5px} .pkNote{display:none} }
 #perkTag{margin-top:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 #perkTag b{color:var(--signal)}
 #modNote{flex-basis:100%;font-size:12px;color:var(--mute);line-height:1.5}
@@ -328,6 +328,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .gfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
 #gNote{font-size:13px;color:var(--ok)}
 @media (max-width:720px){ .gnav{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} .gnav button{flex:0 0 auto} .gbody{font-size:14px} }
+@media (max-width:720px) and (max-height:760px){ #stats #statusTxt{display:none} }
 @media (max-width:1100px){ #help{display:none} }
 @media (max-height:860px){ #help{font-size:11px;line-height:1.42;padding:8px 10px} }
 @media (max-height:700px){ #help{display:none} }
@@ -336,15 +337,21 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
   #tray{overflow-x:auto;justify-content:flex-start}
   .card{flex:0 0 64px;width:64px}
   .traySep{margin:4px 1px}
-  #unitPanel{width:190px;bottom:calc(190px + env(safe-area-inset-bottom,0px));padding:10px 12px}
+  #unitPanel{width:152px;bottom:calc(190px + env(safe-area-inset-bottom,0px));padding:8px 10px;gap:6px}
+  #unitPanel h3{font-size:14px}
+  #unitBtns{gap:4px}
+  #unitBtns button{padding:5px 3px;font-size:10.5px;letter-spacing:.02em}
+  .uHint{display:none}
   #unitStats{font-size:11.5px}
   #helpBtn{display:none}
   #income{display:none}
   #tip{left:auto;right:calc(12px + env(safe-area-inset-right,0px));transform:none;top:calc(168px + env(safe-area-inset-top,0px));width:150px;padding:8px 10px}
   #tip p{font-size:11px}
-  #abilBar{left:calc(16px + env(safe-area-inset-left,0px));transform:none;bottom:calc(252px + env(safe-area-inset-bottom,0px));flex-direction:column;padding:4px;gap:4px}
-  .abil{width:58px;padding:6px 6px}
-  .abil .an{font-size:10px}
+  #abilBar{left:calc(16px + env(safe-area-inset-left,0px));transform:none;bottom:calc(246px + env(safe-area-inset-bottom,0px));flex-direction:column;padding:4px;gap:4px}
+  .abil{width:70px;padding:4px 6px}
+  .abil .an{font-size:9.5px;white-space:nowrap}
+  .abil .ak{font-size:9.5px}
+  #perkTag{margin-top:2px;font-size:9.5px}
   /* phones: sites collapse to a row of mini bars, status is clamped, banner drops below the panels */
   #sites{grid-template-columns:repeat(auto-fit,minmax(18px,1fr));gap:3px}
   .site{grid-template-columns:1fr;gap:0}
@@ -2323,7 +2330,7 @@ function refreshUnitPanel(force){
   if(selUnits.length===1&&selUnits[0].def.note) lines.push(selUnits[0].def.note);
   if(selUnits.length===1){ const u=selUnits[0], d=u.def; lines.push('Rank <b>'+u.rank+' / 3</b> &middot; Range <b>'+Math.round(uRange(u))+' m</b> &middot; Damage <b>'+Math.round(uDmg(u))+'</b>'+(d.twin?' &times;2':'')+(d.heal?' &middot; Repairs <b>'+Math.round(d.heal*(1+0.35*(u.rank-1)))+'/s</b>':'')+(d.coax?' &middot; anti-air MG':'')); }
   else lines.push('Ranks: '+[1,2,3].map(r=>selUnits.filter(u=>u.rank===r).length+' &times; '+r).filter(x=>!x.startsWith('0')).join(', '));
-  lines.push(isTouch?'Tap open ground to send them.':'Right-click the ground to send them. Shift + right-click adds waypoints.');
+  lines.push('<span class="uHint">'+(isTouch?'Tap open ground to send them.':'Right-click the ground to send them. Shift + right-click adds waypoints.')+'</span>');
   $('unitStats').innerHTML=lines.join('<br>');
   const fb=$('followBtn'); fb.classList.toggle('on',follow); fb.textContent=follow?'Stop following':'Follow rover';
   const pb=$('patrolBtn'); pb.classList.toggle('on',patrol); pb.textContent=patrol?'Stop patrol':'Patrol';
