@@ -229,6 +229,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .pkCard:hover,.pkCard:focus-visible{border-color:var(--signal);background:rgba(240,178,58,.08)}
 .pkCard svg{width:26px;height:26px;stroke:var(--signal);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .pkCard b{font-family:var(--display);font-size:14px}
+.pkCard kbd{font-size:10px;color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px;font-weight:500}
 .pkCard span{font-size:12px;color:var(--mute);line-height:1.4}
 .pkNote{margin-top:10px;font-size:11px;color:var(--mute)}
 @media (max-width:560px){ .pkCards{grid-template-columns:1fr;gap:6px} #perkPick{top:auto;bottom:12px;transform:translateX(-50%);padding:12px} .pkCard{grid-template-columns:22px 1fr;column-gap:10px;row-gap:2px;padding:9px 10px} .pkCard svg{width:22px;height:22px;grid-row:span 2} .pkCard span{font-size:11.5px} .pkNote{display:none} }
@@ -243,6 +244,8 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 #dailyCard .dBody span{color:var(--mute)}
 #dailyCard .dRes{font-size:12px}
 @media (max-width:560px){ #dailyCard{grid-template-columns:1fr} }
+.lvlHead{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--mute)}
+#pauseRun{margin:0;color:var(--mute);font-size:14px}
 #modNote{flex-basis:100%;font-size:12px;color:var(--mute);line-height:1.5}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
 .seg button{background:transparent;border:0;border-right:1px solid var(--line);padding:7px 12px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--mute)}
@@ -518,6 +521,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div class="sheet" style="justify-items:start">
       <div class="eyebrow">Paused</div>
       <h1>Holding <span>position</span></h1>
+      <p id="pauseRun" class="pauseRun"></p>
       <div class="opts"><span class="lbl">Graphics</span><span class="seg gfxSegAny"><button type="button" data-g="high">High</button><button type="button" data-g="medium">Medium</button><button type="button" data-g="low">Low</button></span><button class="go alt" id="pauseSound" type="button" style="padding:7px 12px;font-size:12px">Sound</button><button class="go alt" id="pauseSpeed" type="button" style="padding:7px 12px;font-size:12px">Speed</button></div>
       <div class="btnRow"><button class="go" id="resumeBtn" type="button">Resume</button><button class="go alt" id="pauseGuide" type="button">Field manual</button><button class="go alt" id="quitBtn" type="button">Level select</button></div>
     </div>
@@ -1051,7 +1055,7 @@ function showPerkTag(){ const t=$('perkTag'); if(!t) return; t.hidden=!S.perk; i
 function applyRoverPerk(){ const m=pk('armour')?1.5:1; player.maxHp=Math.round(RT.hp*(hasMod('glass')?0.5:1)*m); }
 function openPerkPick(){
   const box=$('perkPick'), opts=PERKS.slice().sort(()=>Math.random()-0.5).slice(0,3);
-  box.querySelector('.pkCards').innerHTML=opts.map(o=>'<button type="button" class="pkCard" data-p="'+o[0]+'"><svg viewBox="0 0 24 24">'+o[3]+'</svg><b>'+o[1]+'</b><span>'+o[2]+'</span></button>').join('');
+  box.querySelector('.pkCards').innerHTML=opts.map((o,i)=>'<button type="button" class="pkCard" data-p="'+o[0]+'"><svg viewBox="0 0 24 24">'+o[3]+'</svg><b>'+o[1]+(isTouch?'':' <kbd>'+(i+1)+'</kbd>')+'</b><span>'+o[2]+'</span></button>').join('');
   box.querySelectorAll('.pkCard').forEach(b=>b.addEventListener('click',()=>pickPerk(b.dataset.p)));
   box.hidden=false; S.perkOpen=true;
 }
@@ -2589,6 +2593,7 @@ window.addEventListener('keydown',e=>{
   if(S.mode!=='inter'&&S.mode!=='wave') return;
   const k=e.code;
   if(k==='Enter'&&e.target&&e.target.tagName==='BUTTON') e.preventDefault();
+  if(S.perkOpen&&/^Digit[123]$/.test(k)){ const c=document.querySelectorAll('.pkCard')[+k.slice(5)-1]; if(c){ c.click(); e.preventDefault(); return; } }
   if(e.shiftKey&&k in SHIFT_IDX){const i=SHIFT_IDX[k]; if(ORDER[i]) setBuild(S.build===ORDER[i]?null:ORDER[i]);}
   else if(k in KEY_IDX){const i=KEY_IDX[k]; if(ORDER[i]) setBuild(S.build===ORDER[i]?null:ORDER[i]);}
   else if(k==='KeyZ') useAbility('strike');
@@ -3226,7 +3231,7 @@ const GUIDE=[
       <div class="gcard"><h4>Keyboard and mouse</h4><ul>
         <li>${kb('W')}${kb('A')}${kb('S')}${kb('D')} drive, ${kb('Shift')} boost</li>
         <li>${kb('Q')} ${kb('E')} or right-drag to turn the view, wheel to zoom</li>
-        <li>${kb('1')} to ${kb('9')} pick a structure, ${kb('0')} ${kb('-')} ${kb('=')} ${kb('[')} ${kb(']')} ${kb('J')} ${kb('K')} ${kb('L')} ${kb('N')} ${kb('Y')} ${kb('I')} ${kb('O')} ${kb('B')} ${kb(',')} ${kb('.')} ${kb(';')} ${kb('/')} pick a unit. The tray's Build, Infantry and Vehicles tabs switch the cards shown</li>
+        <li>${kb('1')} to ${kb('9')} and ${kb('Shift')}+${kb('1')} to ${kb('3')} pick a structure, ${kb('0')} ${kb('-')} ${kb('=')} ${kb('[')} ${kb(']')} ${kb('J')} ${kb('K')} ${kb('L')} ${kb('N')} ${kb('Y')} ${kb('I')} ${kb('O')} ${kb('B')} ${kb(',')} ${kb('.')} ${kb(';')} ${kb('/')} pick a unit. The tray's Build, Infantry and Vehicles tabs switch the cards shown</li>
         <li>Click inside the teal ring to deploy. ${kb('R')} rotates a barricade. Right-click or ${kb('Esc')} cancels</li>
         <li>Click a structure to inspect, ${kb('U')} upgrade, ${kb('X')} sell</li>
         <li>Click or drag a box to select units, ${kb('Tab')} selects all</li>
@@ -3326,6 +3331,18 @@ const GUIDE=[
     <div class="gwrap"><table class="gtable"><thead><tr><th>Raid</th><th>Troops</th><th>Cost</th><th>Unlocks</th><th>Income</th></tr></thead><tbody>${rows}</tbody></table></div>
     <h3>Vs AI commander</h3>
     <p>Practise offline against a computer rival that builds up and raids you more and more often. Your raids wear down its HQ, and its defences harden as the match goes on.</p>`; }},
+  {id:'modes',name:'Modes and perks',html:()=>`
+    <h2>Ways to play</h2>
+    <ul><li><b>Campaign</b>: twelve levels. Each one unlocks the next and adds new structures, squads, tank and rover marks.</li>
+      <li><b>Endless</b>: opens after Level 3. Waves never stop and the enemy HQ rebuilds stronger.</li>
+      <li><b>Daily op</b>: the card above the level list. One level a day from the ones you have unlocked, with two modifiers and a set perk. Win days in a row to build a streak.</li>
+      <li><b>Versus</b>: race a friend online or the computer. Modifiers and perks are off so it stays fair.</li></ul>
+    <h3>Commander perks</h3>
+    <p>From Level 2 on, and in Endless, you pick one of three perks before the first wave. The countdown waits while you choose.</p>
+    <div class="gwrap"><table class="gtable"><thead><tr><th>Perk</th><th>Effect</th></tr></thead><tbody>${PERKS.map(p=>'<tr><td class="nm">'+p[1]+'</td><td>'+p[2]+'</td></tr>').join('')}</tbody></table></div>
+    <h3>Modifiers</h3>
+    <p>Optional twists, switched on from the title screen. They apply to campaign and Endless. Win a level with three or more for the Daredevil medal.</p>
+    <div class="gwrap"><table class="gtable"><thead><tr><th>Modifier</th><th>Effect</th></tr></thead><tbody>${MODS.map(m=>'<tr><td class="nm">'+m[1]+'</td><td>'+m[2]+'</td></tr>').join('')}</tbody></table></div>`},
   {id:'tips',name:'Strategy',html:()=>`
     <h2>Field tips</h2>
     <h3>Before each wave</h3>
@@ -3362,7 +3379,15 @@ $('gPrev').addEventListener('click',()=>{ if(gIdx>0){ gIdx--; renderGuide(); } }
 $('gNext').addEventListener('click',()=>{ if(gIdx<GUIDE.length-1){ gIdx++; renderGuide(); } });
 $('tutReset').addEventListener('click',()=>{ $('guide').hidden=true; S.paused=false; $('pause').hidden=true; startTraining(); });
 window.addEventListener('keydown',e=>{ if($('guide').hidden) return; if(e.code==='Escape'){ e.stopImmediatePropagation(); closeGuide(); } else if(e.code==='ArrowRight'&&gIdx<GUIDE.length-1){ gIdx++; renderGuide(); } else if(e.code==='ArrowLeft'&&gIdx>0){ gIdx--; renderGuide(); } },true);
-function togglePause(){ if(S.mode!=='inter'&&S.mode!=='wave') return; if(!$('guide').hidden) return; S.paused=!S.paused; $('pause').hidden=!S.paused; }
+function togglePause(){ if(S.mode!=='inter'&&S.mode!=='wave') return; if(!$('guide').hidden) return; S.paused=!S.paused; $('pause').hidden=!S.paused; if(S.paused) renderPauseRun(); }
+function renderPauseRun(){
+  const bits=[]; const L=LV();
+  bits.push(S.vs?'Versus':S.training?'Boot Camp':S.daily?'Daily op: '+L.name:S.endless?'Endless: '+L.name:'Level '+(S.lvl+1)+': '+L.name);
+  if(!S.vs&&!S.training) bits.push(DIFFS[OPT.diff]?OPT.diff[0].toUpperCase()+OPT.diff.slice(1):'');
+  if(S.perk) bits.push('Perk: '+perkName(S.perk));
+  if(S.mods&&S.mods.length) bits.push('Modifiers: '+S.mods.map(m=>MODS.find(x=>x[0]===m)[1]).join(', '));
+  $('pauseRun').textContent=bits.filter(Boolean).join(' \u00b7 ');
+}
 function toggleSpeed(){ OPT.speed=OPT.speed===1?2:1; saveOpt(); renderSpeed(); }
 function renderSpeed(){ const b=$('speedBtn'); b.innerHTML=OPT.speed+'&times;'; b.classList.toggle('fast',OPT.speed>1); }
 function toggleHelp(){ OPT.help=!OPT.help; saveOpt(); renderHelp(); }
@@ -3410,6 +3435,7 @@ function showMenu(){
 }
 function renderLevels(){
   const box=$('levels'); box.innerHTML='';
+  const tot=LEVELS.reduce((a,L,i)=>a+(PROG.stars[i]||0),0), hd=document.createElement('div'); hd.className='lvlHead'; hd.innerHTML='<span class="eyebrow">Campaign</span><span><b style="color:var(--signal)">\u2605</b> '+tot+' of '+LEVELS.length*3+' stars &middot; '+Math.min(PROG.unlocked,LEVELS.length)+' of '+LEVELS.length+' levels open</span>'; box.appendChild(hd);
   LEVELS.forEach((L,i)=>{
     const open=i<PROG.unlocked, b=document.createElement('button'); b.type='button'; b.className='lvl'; b.disabled=!open;
     const st=PROG.stars[i]||0;
