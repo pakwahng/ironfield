@@ -235,6 +235,9 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 @media (max-width:560px){ .pkCards{grid-template-columns:1fr;gap:6px} #perkPick{top:auto;bottom:12px;transform:translateX(-50%);padding:12px} .pkCard{grid-template-columns:22px 1fr;column-gap:10px;row-gap:2px;padding:9px 10px} .pkCard svg{width:22px;height:22px;grid-row:span 2} .pkCard span{font-size:11.5px} .pkNote{display:none} }
 #perkTag{margin-top:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 #perkTag b{color:var(--signal)}
+#eventTag{margin-top:4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+#eventTag b{color:var(--hostile)}
+@media (max-width:720px){ #eventTag{font-size:9.5px;margin-top:2px} }
 #dailyCard{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center;margin:4px 0 14px;padding:12px 14px;border:1px solid rgba(240,178,58,.45);border-radius:8px;background:rgba(240,178,58,.06)}
 #dailyCard .dHead{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px}
 #dailyCard .eyebrow{color:var(--signal)}
@@ -418,6 +421,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="meter"><div class="lbl"><span>Enemy HQ</span><span id="foeTxt">Shielded</span></div><div class="bar"><i id="foeBar" style="background:var(--hostile)"></i></div></div>
       <div class="meter"><div class="lbl"><span id="roverName">Rover hull</span><span id="pTxt">100%</span></div><div class="bar"><i id="pBar"></i></div></div>
       <div id="perkTag" hidden></div>
+      <div id="eventTag" hidden></div>
       <div id="supplyRow"><span id="supply">0</span><span class="lbl">supply</span><span id="income"></span><span id="unitCount"></span></div>
       <div id="status"><span id="statusTxt"></span><button id="launchBtn" hidden>Launch now</button></div>
     </div>
@@ -1021,6 +1025,31 @@ const PERKS=[
 ];
 const pk=id=>S.perk===id;
 let restorePerk=null;
+// Battlefield events: from Level 3 on, roughly one wave in three brings a twist that lasts until the wave is held.
+const EVENTS={
+  dust:['Dust storm','Every tower and squad reaches 20% less far until this wave is held.'],
+  drop:['Supply drop','Crates of supply have landed by your outposts. Drive over them.'],
+  reinf:['Reinforcements','Two Rifle Squads have arrived at the HQ, free.'],
+  frenzy:['Frenzy','Hostiles move a quarter faster this wave.'],
+  surge:['Power surge','Every ability is ready now and recharges twice as fast this wave.'],
+  ambush:['Ambush','A raiding party is coming at an outpost from an unexpected side.'],
+};
+const evRange=()=>S.event==='dust'?0.8:1;
+function rollEvent(){
+  S.event=null;
+  if(S.vs||S.training||!(S.lvl>=2||S.endless)||S.wave<2||S.lastEvent===S.wave-1||Math.random()>0.33) return '';
+  const k=Object.keys(EVENTS)[Math.floor(Math.random()*6)]; S.event=k; S.lastEvent=S.wave;
+  const live=sites.filter(st=>st.alive);
+  if(k==='dust') setWeather('ash');
+  if(k==='drop') for(const st of live.slice(0,4)) spawnCrate(0,0,clamp(st.x+rand(-14,14),-MAP+10,MAP-10),clamp(st.z+rand(-14,14),-MAP+10,MAP-10),50+S.wave*4);
+  if(k==='reinf') for(let i=0;i<2;i++){ const u=addUnit('trooper',hq.x+rand(-6,6),hq.z+10+i*3); u.spent=0; }
+  if(k==='surge') for(const a in S.cd) S.cd[a]=0;
+  if(k==='ambush'&&live.length){ const st=live[Math.floor(Math.random()*live.length)], idx=sites.indexOf(st), a=Math.random()*360;
+    for(let i=0;i<8;i++) S.queue.unshift({t:i%4===3?'brute':'runner',sp:{a,to:idx}}); }
+  showEventTag(); return EVENTS[k][0]+': '+EVENTS[k][1]+' ';
+}
+function endEvent(){ if(S.event==='dust') setWeather(curWeather); S.event=null; showEventTag(); }
+function showEventTag(){ const t=$('eventTag'); if(!t) return; t.hidden=!S.event; if(S.event) t.innerHTML='Event &middot; <b>'+EVENTS[S.event][0]+'</b>'; }
 // Daily op: one level a day, chosen from the levels this player has unlocked, with two modifiers and a set perk.
 let dailyRun=null;
 function dayKey(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -1781,7 +1810,7 @@ function startLevel(i,endless,vs,training){
   if(!restoring&&!vs&&!training&&!dailyRun) clearSave();
   setupLevel(i,endless); const L=LV();
   Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply*((vs||training||!OPT.mods.includes('lean'))?1:0.6)),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
-  S.daily=(dailyRun&&!vs&&!training)?dailyRun.key:null;
+  S.daily=(dailyRun&&!vs&&!training)?dailyRun.key:null; S.event=null; S.lastEvent=-9; showEventTag();
   S.mods=(vs||training)?[]:S.daily?dailyRun.mods.slice():OPT.mods.slice(); S.perk=restoring?restorePerk:S.daily?dailyRun.perk:null; dailyRun=null; S.perkOpen=false; $('perkPick').hidden=true;
   RT=roverTier(); BUILD_R=RT.reach; applyRoverPerk(); $('roverName').textContent='Rover hull · Mk '+['I','II','III'][RT.mk-1];
   rover=modelRover(RT.mk); scene.add(rover.g);
@@ -1878,8 +1907,8 @@ function startWave(early){
   }
   S.spawnInterval=Math.max(0.18,(10+S.wave)/S.queue.length);
   S.spawnT=0;
-  const lines=S.spawns.map(sp=>compass(spawnRad(sp))+' toward '+targetName(sp));
-  banner('Wave '+S.wave+(L.endless?'':' of '+L.waves),(bc?'Heavy contact. ':'')+lines.join(' \u00b7 '),'hostile');
+  const lines=S.spawns.map(sp=>compass(spawnRad(sp))+' toward '+targetName(sp)), evTxt=rollEvent();
+  banner('Wave '+S.wave+(L.endless?'':' of '+L.waves)+(S.event?' \u00b7 '+EVENTS[S.event][0]:''),evTxt+(bc?'Heavy contact. ':'')+lines.join(' \u00b7 '),'hostile');
   sfx('alarm');
   // first sighting of a new hostile type gets a short briefing
   PROG.seen=PROG.seen||{};
@@ -1887,7 +1916,7 @@ function startWave(early){
   if(fresh.length){ fresh.forEach(t=>PROG.seen[t]=1); saveProg(); let d=3900; fresh.forEach(t=>{ setTimeout(()=>{ if(S.mode==='wave') banner(FOE_TIPS[t][0],FOE_TIPS[t][1],'hostile'); },d); d+=4300; }); }
 }
 function waveCleared(){
-  const L=LV();
+  const L=LV(); endEvent();
   if(S.wave>=L.waves){ winLevel(); return; }
   if(L.endless){
     if(S.wave>(PROG.endlessBest||0)){ PROG.endlessBest=S.wave; saveProg(); }
@@ -1940,7 +1969,7 @@ function cpoint(s,x,z){
   CP.nx=dx/L; CP.nz=dz/L; CP.d=L-s.radius; CP.px=s.x+CP.nx*s.radius; CP.pz=s.z+CP.nz*s.radius; return CP;
 }
 const lvlMul=(s,k)=>1+k*(s.level-1);
-const sRange=s=>s.def.range*lvlMul(s,0.12)*(pk('marks')&&!s.isSite?1.12:1)*(s.boostT>0&&s.type!=='radar'?1.1:1);
+const sRange=s=>s.def.range*lvlMul(s,0.12)*(pk('marks')&&!s.isSite?1.12:1)*(s.boostT>0&&s.type!=='radar'?1.1:1)*evRange();
 const sDmg=s=>s.def.dmg*lvlMul(s,0.45);
 const upCost=s=>Math.round(s.def.cost*0.8*s.level);
 const sellValue=s=>Math.round(s.spent*0.5);
@@ -2286,7 +2315,7 @@ function toggleFollow(){
   reslotFollowers(); sfx('order'); refreshUnitPanel(true);
 }
 // Field upgrades: up to rank 3. Each rank adds 30% health, 35% damage and 10% range.
-const uRange=u=>u.def.range*(1+0.1*(u.rank-1));
+const uRange=u=>u.def.range*(1+0.1*(u.rank-1))*evRange();
 const uDmg=u=>u.def.dmg*(1+0.35*(u.rank-1));
 const uUpCost=u=>Math.round(u.def.cost*0.6*u.rank);
 function upgradeUnits(){
@@ -2494,7 +2523,7 @@ function useAbility(k,x,z){
   }
 }
 function updateAbilities(dt){
-  for(const k in S.cd) S.cd[k]=Math.max(0,S.cd[k]-dt);
+  for(const k in S.cd) S.cd[k]=Math.max(0,S.cd[k]-dt*(S.event==='surge'?2:1));
   for(const st of S.strikes){
     st.t+=dt; if(st.t<0) continue;
     st.acc+=dt;
@@ -3340,6 +3369,9 @@ const GUIDE=[
     <h3>Commander perks</h3>
     <p>From Level 2 on, and in Endless, you pick one of three perks before the first wave. The countdown waits while you choose.</p>
     <div class="gwrap"><table class="gtable"><thead><tr><th>Perk</th><th>Effect</th></tr></thead><tbody>${PERKS.map(p=>'<tr><td class="nm">'+p[1]+'</td><td>'+p[2]+'</td></tr>').join('')}</tbody></table></div>
+    <h3>Battlefield events</h3>
+    <p>From Level 3 on, about one wave in three brings an event. It is named in the wave banner and on the stats panel, and lasts until the wave is held.</p>
+    <div class="gwrap"><table class="gtable"><thead><tr><th>Event</th><th>Effect</th></tr></thead><tbody>${Object.values(EVENTS).map(e=>'<tr><td class="nm">'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')}</tbody></table></div>
     <h3>Modifiers</h3>
     <p>Optional twists, switched on from the title screen. They apply to campaign and Endless. Win a level with three or more for the Daredevil medal.</p>
     <div class="gwrap"><table class="gtable"><thead><tr><th>Modifier</th><th>Effect</th></tr></thead><tbody>${MODS.map(m=>'<tr><td class="nm">'+m[1]+'</td><td>'+m[2]+'</td></tr>').join('')}</tbody></table></div>`},
@@ -3776,7 +3808,7 @@ function updateEnemies(dt){
     let dx=tx-e.x, dz=tz-e.z; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;
     e.px=e.x; e.pz=e.z;
     if(dist>d.range){
-      e.x+=dx*d.speed*slow*dt; e.z+=dz*d.speed*slow*dt; e.walking=true;
+      const fz_=S.event==='frenzy'?1.25:1; e.x+=dx*d.speed*slow*fz_*dt; e.z+=dz*d.speed*slow*fz_*dt; e.walking=true;
     } else {
       e.walking=false; e.cd-=dt*slow;
       if(e.cd<=0){
