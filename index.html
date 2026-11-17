@@ -221,6 +221,19 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .mods .chips button.on{border-color:var(--hostile);color:var(--hostile);background:rgba(227,98,63,.12)}
 
 .abil.off{opacity:.3;filter:grayscale(1)}
+#perkPick{position:absolute;left:50%;top:50%;transform:translate(-50%,-30%);z-index:30;width:min(640px,calc(100vw - 32px));padding:16px;background:var(--panel-solid);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#perkPick[hidden]{display:none}
+#perkPick .eyebrow{color:var(--signal);margin-bottom:10px}
+.pkCards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pkCard{display:grid;gap:6px;justify-items:start;align-content:start;text-align:left;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:6px;color:inherit}
+.pkCard:hover,.pkCard:focus-visible{border-color:var(--signal);background:rgba(240,178,58,.08)}
+.pkCard svg{width:26px;height:26px;stroke:var(--signal);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pkCard b{font-family:var(--display);font-size:14px}
+.pkCard span{font-size:12px;color:var(--mute);line-height:1.4}
+.pkNote{margin-top:10px;font-size:11px;color:var(--mute)}
+@media (max-width:560px){ .pkCards{grid-template-columns:1fr} #perkPick{top:auto;bottom:12px;transform:translateX(-50%)} }
+#perkTag{margin-top:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+#perkTag b{color:var(--signal)}
 #modNote{flex-basis:100%;font-size:12px;color:var(--mute);line-height:1.5}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
 .seg button{background:transparent;border:0;border-right:1px solid var(--line);padding:7px 12px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--mute)}
@@ -372,12 +385,14 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
   <canvas id="overlay"></canvas>
 
   <div id="hud" hidden>
+    <div id="perkPick" hidden><div class="eyebrow">Choose a commander perk</div><div class="pkCards"></div><div class="pkNote">The countdown waits while you choose. The perk lasts for this run.</div></div>
     <div id="stats" class="panel">
       <div id="lvlTitle"><span id="lvlName">Dry Creek</span><span class="lbl" id="lvlNo">Level 1</span></div>
       <div class="wave"><span class="lbl">Wave</span><b id="waveNum">0 / 5</b></div>
       <div class="meter"><div class="lbl"><span>Sites held</span><span id="sitesTxt">2 / 2</span></div><div id="sites"></div></div>
       <div class="meter"><div class="lbl"><span>Enemy HQ</span><span id="foeTxt">Shielded</span></div><div class="bar"><i id="foeBar" style="background:var(--hostile)"></i></div></div>
       <div class="meter"><div class="lbl"><span id="roverName">Rover hull</span><span id="pTxt">100%</span></div><div class="bar"><i id="pBar"></i></div></div>
+      <div id="perkTag" hidden></div>
       <div id="supplyRow"><span id="supply">0</span><span class="lbl">supply</span><span id="income"></span><span id="unitCount"></span></div>
       <div id="status"><span id="statusTxt"></span><button id="launchBtn" hidden>Launch now</button></div>
     </div>
@@ -959,7 +974,34 @@ const MODS=[
 ];
 if(!Array.isArray(OPT.mods)) OPT.mods=[]; OPT.mods=OPT.mods.filter(m=>MODS.some(x=>x[0]===m));
 const hasMod=m=>!!(S.mods&&S.mods.includes(m));
-const modSup=()=>hasMod('lean')?0.6:1;
+// Commander perks: pick one of three at the start of a campaign or Endless run.
+const PERKS=[
+  ['quarter','Quartermaster','+150 supply now and 20% more supply from wave bonuses and the HQ trickle.','<path d="M4 8h16v11H4z"/><path d="M8 8V5h8v3"/><path d="M4 12h16"/>'],
+  ['fort','Fortifier','Your towers and barricades have 25% more hull.','<path d="M4 20V9l4 2V7l4 2V5l4 2v4l4-2v11z"/>'],
+  ['marks','Marksmen','Your towers reach 12% further.','<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>'],
+  ['drill','Drill sergeants','New squads arrive at rank 2.','<path d="M5 15l7-5 7 5"/><path d="M5 20l7-5 7 5"/>'],
+  ['air','Air marshal','Airstrike, repair pulse and EMP recharge 35% faster.','<path d="M2 14l20-6-6 12-3-5z"/>'],
+  ['armour','Armoured rover','Your rover has 50% more hull and its guns hit 50% harder.','<rect x="3" y="10" width="18" height="7" rx="2"/><path d="M8 10V7h8v3"/><path d="M16 8h5"/>'],
+];
+const pk=id=>S.perk===id;
+let restorePerk=null;
+const modSup=()=>(hasMod('lean')?0.6:1)*(pk('quarter')?1.2:1);
+function perkName(id){ const x=PERKS.find(q=>q[0]===id); return x?x[1]:''; }
+function showPerkTag(){ const t=$('perkTag'); if(!t) return; t.hidden=!S.perk; if(S.perk) t.innerHTML='Perk &middot; <b>'+perkName(S.perk)+'</b>'; }
+function applyRoverPerk(){ const m=pk('armour')?1.5:1; player.maxHp=Math.round(RT.hp*(hasMod('glass')?0.5:1)*m); }
+function openPerkPick(){
+  const box=$('perkPick'), opts=PERKS.slice().sort(()=>Math.random()-0.5).slice(0,3);
+  box.querySelector('.pkCards').innerHTML=opts.map(o=>'<button type="button" class="pkCard" data-p="'+o[0]+'"><svg viewBox="0 0 24 24">'+o[3]+'</svg><b>'+o[1]+'</b><span>'+o[2]+'</span></button>').join('');
+  box.querySelectorAll('.pkCard').forEach(b=>b.addEventListener('click',()=>pickPerk(b.dataset.p)));
+  box.hidden=false; S.perkOpen=true;
+}
+function pickPerk(id){
+  S.perk=id; S.perkOpen=false; $('perkPick').hidden=true;
+  if(id==='quarter'){ S.supply+=150; floatText(player.x,H(player.x,player.z)+4,player.z,'+150 supply',COL.signal); }
+  if(id==='armour'){ applyRoverPerk(); player.hp=player.maxHp; }
+  if(id==='fort') for(const st of structures) if(!st.isSite){ const m=Math.round(st.maxHp*1.25); st.hp+=m-st.maxHp; st.maxHp=m; }
+  sfx('order'); showPerkTag();
+}
 const modHp=()=>(hasMod('ironclad')?1.4:1)*(hasMod('swarm')?0.75:1);
 function renderMods(){
   const box=$('modChips'); if(!box) return;
@@ -1528,7 +1570,8 @@ function addStructure(type,x,z,rot,name){
   const def=isHQ?HQDEF:type==='outpost'?OUTDEF:BUILD[type];
   const mdl=isHQ?modelHQ():type==='outpost'?modelOutpost():MODEL[type]();
   mdl.g.position.set(x,H(x,z),z); mdl.g.rotation.y=rot||0; scene.add(mdl.g);
-  const s={type,def,g:mdl.g,head:mdl.head,x,z,rot:rot||0,hp:def.hp,maxHp:def.hp,level:1,spent:isSite?0:def.cost,cd:rand(0,0.5),tgt:null,scan:0,radius:def.radius,alive:true,hit:0,isHQ,isSite,name:name||def.name,phase:Math.random()*TAU,lastHit:99,warnT:0};
+  const fm=(!isSite&&pk('fort'))?1.25:1;
+  const s={type,def,g:mdl.g,head:mdl.head,x,z,rot:rot||0,hp:Math.round(def.hp*fm),maxHp:Math.round(def.hp*fm),level:1,spent:isSite?0:def.cost,cd:rand(0,0.5),tgt:null,scan:0,radius:def.radius,alive:true,hit:0,isHQ,isSite,name:name||def.name,phase:Math.random()*TAU,lastHit:99,warnT:0};
   if(type==='wall'){const c=Math.cos(s.rot),sn=Math.sin(s.rot); s.ax=x-c*4; s.az=z+sn*4; s.bx=x+c*4; s.bz=z-sn*4;}
   structures.push(s); if(isSite) sites.push(s); return s;
 }
@@ -1585,7 +1628,7 @@ function loadSave(){ try{ const sv=JSON.parse(localStorage.getItem(SAVE_KEY)||'n
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} renderContinue(); }
 function saveGame(){
   if(S.vs||S.training) return;
-  const sv={v:1,lvl:S.lvl,endless:!!S.endless,diff:OPT.diff,mods:(S.mods||[]).slice(),wave:S.wave,supply:Math.floor(S.supply),lost:S.lost,kills:S.kills,built:S.built,time:Math.floor(S.time),
+  const sv={v:1,lvl:S.lvl,endless:!!S.endless,diff:OPT.diff,perk:S.perk||null,mods:(S.mods||[]).slice(),wave:S.wave,supply:Math.floor(S.supply),lost:S.lost,kills:S.kills,built:S.built,time:Math.floor(S.time),
     rebuildAt:S.rebuildAt||0,rebuilds:S.rebuilds||0,
     sites:sites.map(st=>({alive:st.alive,hp:Math.round(st.hp)})),
     structs:structures.filter(st=>!st.isSite).map(st=>({tm:st.tmode||null,t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
@@ -1599,13 +1642,14 @@ function renderContinue(){
 }
 function continueGame(){
   const sv=loadSave(); if(!sv) return;
+  restorePerk=PERKS.some(q=>q[0]===sv.perk)?sv.perk:null;
   if(DIFFS[sv.diff]){ OPT.diff=sv.diff; }
   OPT.mods=Array.isArray(sv.mods)?sv.mods.filter(m=>MODS.some(x=>x[0]===m)):[]; saveOpt(); renderOpts();
   restoring=true; startLevel(sv.lvl,sv.endless); restoring=false;
   Object.assign(S,{wave:sv.wave,supply:sv.supply,lost:sv.lost,kills:sv.kills,built:sv.built,time:sv.time,mode:'inter',inter:25,rebuildAt:sv.rebuildAt,rebuilds:sv.rebuilds});
   sv.sites.forEach((d,i)=>{ const st=sites[i]; if(!st) return; if(!d.alive){ st.alive=false; scene.remove(st.g); structures=structures.filter(o=>o!==st); } else st.hp=Math.min(st.maxHp,d.hp); });
   sv.structs.forEach(d=>{ if(!BUILD[d.t]||BUILD[d.t].unit) return; const st=addStructure(d.t,d.x,d.z,d.r); st.level=d.l||1; st.spent=d.sp||st.spent; if(d.tm) st.tmode=d.tm;
-    if(st.level>1){ st.maxHp=Math.round(st.def.hp*lvlMul(st,0.35)); st.g.scale.setScalar(1+0.09*(st.level-1)); } st.hp=Math.min(st.maxHp,d.hp); });
+    if(st.level>1){ st.maxHp=Math.round(st.def.hp*lvlMul(st,0.35)*(!st.isSite&&pk('fort')?1.25:1)); st.g.scale.setScalar(1+0.09*(st.level-1)); } st.hp=Math.min(st.maxHp,d.hp); });
   restoring=true;
   sv.units.forEach(d=>{ if(!BUILD[d.t]||!BUILD[d.t].unit) return; const u=addUnit(d.t,d.x,d.z); u.rank=d.k||1; u.spent=d.sp||u.spent;
     u.maxHp=Math.round(u.def.hp*(1+0.3*(u.rank-1))); u.hp=Math.min(u.maxHp,d.hp); u.mode=d.m==='follow'?'follow':'guard'; u.hold=!!d.h; u.wp=(d.w||[]).map(a=>({x:a[0],z:a[1]})); u.patrol=!!d.pt; u.postX=d.px; u.postZ=d.pz; });
@@ -1626,8 +1670,8 @@ function startLevel(i,endless,vs,training){
   if(!restoring&&!vs&&!training) clearSave();
   setupLevel(i,endless); const L=LV();
   Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply*((vs||training||!OPT.mods.includes('lean'))?1:0.6)),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
-  S.mods=(vs||training)?[]:OPT.mods.slice();
-  RT=roverTier(); BUILD_R=RT.reach; player.maxHp=Math.round(RT.hp*(hasMod('glass')?0.5:1)); $('roverName').textContent='Rover hull · Mk '+['I','II','III'][RT.mk-1];
+  S.mods=(vs||training)?[]:OPT.mods.slice(); S.perk=restoring?restorePerk:null; S.perkOpen=false; $('perkPick').hidden=true;
+  RT=roverTier(); BUILD_R=RT.reach; applyRoverPerk(); $('roverName').textContent='Rover hull · Mk '+['I','II','III'][RT.mk-1];
   rover=modelRover(RT.mk); scene.add(rover.g);
   Object.assign(player,{x:hq.x,z:hq.z+14,vx:0,vz:0,yaw:0,hp:player.maxHp,alive:true,respawn:0,cd:0,tgt:null,lastHit:99,kills:0}); S.kcat={}; S.ruins=[]; S.look=null;
   focus.set(player.x,0,player.z);
@@ -1639,7 +1683,8 @@ function startLevel(i,endless,vs,training){
   const fresh=S.endless?[]:L.towers.filter(t=>TOWER_LEVEL[t]===i+1&&i>0).map(t=>BUILD[t].name);
   if(!S.endless&&TANK_UNLOCK[i]) fresh.push(TANK_UNLOCK[i]);
   if(!S.endless&&!vs&&!training&&ROVER_UNLOCK[i]) fresh.push(ROVER_UNLOCK[i]);
-  startTutorial();
+  startTutorial(); showPerkTag();
+  if(!vs&&!training&&!restoring&&(i>0||S.endless)) openPerkPick();
   if(!S.training) banner((S.endless?'Endless: ':'Level '+(i+1)+': ')+L.name,(fresh.length?'New: '+fresh.join(', ')+'. ':'')+'First contact in 40 s. Enemy HQ lies '+compass(Math.atan2(L.foe.x-hq.x,-(L.foe.z-hq.z)))+'. '+(L.allow?'You can lose '+L.allow+' outpost'+(L.allow>1?'s':'')+'.':'Hold every site.'),'');
 }
 
@@ -1783,7 +1828,7 @@ function cpoint(s,x,z){
   CP.nx=dx/L; CP.nz=dz/L; CP.d=L-s.radius; CP.px=s.x+CP.nx*s.radius; CP.pz=s.z+CP.nz*s.radius; return CP;
 }
 const lvlMul=(s,k)=>1+k*(s.level-1);
-const sRange=s=>s.def.range*lvlMul(s,0.12);
+const sRange=s=>s.def.range*lvlMul(s,0.12)*(pk('marks')&&!s.isSite?1.12:1);
 const sDmg=s=>s.def.dmg*lvlMul(s,0.45);
 const upCost=s=>Math.round(s.def.cost*0.8*s.level);
 const sellValue=s=>Math.round(s.spent*0.5);
@@ -2094,6 +2139,7 @@ function addUnit(type,x,z){
   const u={type,def,rank:1,isUnit:true,g:mdl.g,head:mdl.head,ring,x,z,yaw:camYaw+Math.PI,hp:def.hp,maxHp:def.hp,radius:def.radius,alive:true,cd:rand(0,0.3),tgt:null,chase:null,scan:0,
     mode:'guard',postX:x,postZ:z,slot:0,slotN:1,lastHit:99,hit:0,spent:def.cost,healT:0,healTgt:null};
   units.push(u);
+  if(pk('drill')&&!restoring){ u.rank=2; u.maxHp=u.hp=Math.round(def.hp*1.3); }
   if(!restoring&&!S.training){ if(new Set(units.map(o=>o.type)).size>=6) award('combined'); if(units.length>=12) award('company'); if(type==='tank'&&BUILD.tank.mk===3) award('titan'); }
   return u;
 }
@@ -2321,7 +2367,7 @@ function useAbility(k,x,z){
     pulse(x,z,ABIL.strike.radius,0xff8a3a); sfx('alarm');
     return;
   }
-  S.cd[k]=ABIL[k].cd;
+  S.cd[k]=ABIL[k].cd*(pk('air')?0.65:1);
   const R=ABIL[k].radius, px=player.x, pz=player.z;
   if(k==='pulse'){
     for(const st of structures){ if(cpoint(st,px,pz).d<R){ st.hp=Math.min(st.maxHp,st.hp+st.maxHp*0.3); st.repairing=0.6; } }
@@ -2546,7 +2592,7 @@ function doUpgrade(){
   const s=S.sel; if(!s||s.isSite||s.isFoe||s.level>=3) return;
   const c=upCost(s); if(S.supply<c||!inReach(s)){sfx('deny');return;}
   S.supply-=c; s.spent+=c; s.level++;
-  const newMax=Math.round(s.def.hp*lvlMul(s,0.35)); s.hp+=newMax-s.maxHp; s.maxHp=newMax;
+  const newMax=Math.round(s.def.hp*lvlMul(s,0.35)*(!s.isSite&&pk('fort')?1.25:1)); s.hp+=newMax-s.maxHp; s.maxHp=newMax;
   s.g.scale.setScalar(1+0.09*(s.level-1));
   boom(s.x,H(s.x,s.z)+1,s.z,3.5,COL.ally,0.4); sfx('build'); refreshSel(true);
 }
@@ -3313,8 +3359,8 @@ function updatePlayer(dt){
     if(player.cd<=0){
       player.cd=RT.rate; const yy=y+2.2, a=player.yaw+rover.head.rotation.y, ox=Math.cos(a)*0.32, oz=-Math.sin(a)*0.32;
       curSrc=player;
-      if(RT.twin){ for(const sd of [-1,1]) tracer(player.x+ox*sd,yy,player.z+oz*sd,t.x+rand(-0.3,0.3),tY(t),t.z+rand(-0.3,0.3),COL.ally); hurtHostile(t,RT.dmg*2,true); }
-      else { tracer(player.x,yy,player.z,t.x,tY(t),t.z,COL.ally); hurtHostile(t,RT.dmg,true); }
+      if(RT.twin){ for(const sd of [-1,1]) tracer(player.x+ox*sd,yy,player.z+oz*sd,t.x+rand(-0.3,0.3),tY(t),t.z+rand(-0.3,0.3),COL.ally); hurtHostile(t,RT.dmg*2*(pk('armour')?1.5:1),true); }
+      else { tracer(player.x,yy,player.z,t.x,tY(t),t.z,COL.ally); hurtHostile(t,RT.dmg*(pk('armour')?1.5:1),true); }
       curSrc=null; sfx('pshot',player.x,player.z);
     }
   } else { player.cd=Math.max(0,player.cd-dt); rover.head.rotation.y=angLerp(rover.head.rotation.y,0,dt*3); }
@@ -3650,7 +3696,7 @@ function updateGame(dt){
   S.time+=dt;
   if(S.training) updateTraining(dt);
   else if(S.vs) updateVs(dt);
-  else if(S.mode==='inter'){ S.inter-=dt; if(S.inter<=0) startWave(false); }
+  else if(S.mode==='inter'){ if(!S.perkOpen) S.inter-=dt; if(S.inter<=0) startWave(false); }
   else if(S.mode==='wave'){
     if(S.queue.length){ S.spawnT-=dt; while(S.spawnT<=0&&S.queue.length){ const q=S.queue.shift(); spawnFoe(q.t,q.sp); S.spawnT+=S.spawnInterval; } }
     else if(enemies.length===0) waveCleared();
