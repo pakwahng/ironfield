@@ -458,7 +458,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
     <div id="help" class="panel">
       <b>WASD</b> drive &nbsp; <b>Shift</b> boost<br>
       <b>Q E</b> / right-drag turn view &nbsp; <b>Wheel</b> zoom<br>
-      <b>1-9</b> structures &nbsp; <b>0 - = [ ] J K L N Y I O B , . ; /</b> units<br>
+      <b>1-9</b>, <b>Shift+1-3</b> structures &nbsp; <b>0 - = [ ] J K L N Y I O B , . ; /</b> units<br>
       <b>Click</b> deploy or select &nbsp; <b>R</b> rotate barricade<br>
       <b>Right-click</b> cancel placing &nbsp; <b>T</b> rebuild ruins<br>
       <b>Drag</b> box-select units &nbsp; <b>Double-click</b> a unit to pick all of its type &nbsp; <b>Tab</b> all units<br>
@@ -693,7 +693,7 @@ const VSDEF={name:'Crossfire',vs:true,blurb:'',towers:['sentry','wall','mortar',
   spawns:[{a:20,to:1},{a:70,to:1},{a:340,to:2},{a:290,to:2},{a:150,to:0},{a:210,to:0}],k0:1,kStep:3};
 const ENDLESS=Object.assign({},LEVELS[4],{name:'Last Stand',endless:true,towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],mix:{juggernaut:1,phantom:1,burrower:1,carrier:1},blurb:'Night falls on the four outposts. Hold as long as you can.',waves:Infinity,off:4,supply:520,allow:1,bosses:[],
   ter:{ox:2600,oz:-700,amp:1.15,cA:0x4a5236,cB:0x5f5a44,sky:0x1b2130,night:true}});
-[['bulwark',2],['sniper',3],['pyro',4],['drone',5],['mortarcrew',2],['shock',4],['demo',6],['strider',8],['stinger',3],['jammer',4],['commando',5],['spear',7]].forEach(([t,from])=>{ LEVELS.forEach((L,i)=>{ if(i>=from&&!L.towers.includes(t)) L.towers.push(t); }); ENDLESS.towers.push(t); VSDEF.towers.push(t); });
+[['repair',3],['radar',5],['silo',7],['bulwark',2],['sniper',3],['pyro',4],['drone',5],['mortarcrew',2],['shock',4],['demo',6],['strider',8],['stinger',3],['jammer',4],['commando',5],['spear',7]].forEach(([t,from])=>{ LEVELS.forEach((L,i)=>{ if(i>=from&&!L.towers.includes(t)) L.towers.push(t); }); ENDLESS.towers.push(t); VSDEF.towers.push(t); });
 LEVELS[5].ter.weather='ash'; LEVELS[8].ter.weather='snow'; LEVELS[9].ter.weather='embers';
 let TER={ox:0,oz:0,amp:1,flat:[{x:0,z:0}]};
 function H(x,z){
@@ -896,6 +896,12 @@ const BUILD={
     icon:'<circle cx="12" cy="5" r="2.2"/><path d="M12 8v7M8 11h8M9 21l3-6 3 6"/>'},
   engineer:{key:'-',unit:true,name:'Field Engineer',cost:70,hp:195,speed:13,range:12,dmg:3,rate:0.5,heal:12,healR:12,radius:1.1,barY:2.8,blurb:'Repairs structures and units nearby.',
     icon:'<path d="M14.5 5.5a4 4 0 0 0-5 5L4 16l4 4 5.5-5.5a4 4 0 0 0 5-5L16 12l-4-4z"/>'},
+  repair:{key:'⇧1',name:'Repair Bay',cost:150,hp:420,range:12,heal:16,radius:1.9,barY:3.8,blurb:'Repairs every squad and structure within 12 m, all at once.',
+    icon:'<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M12 11v7M8.5 14.5h7"/><path d="M9 9V6h6v3"/>'},
+  radar:{key:'⇧2',name:'Radar Mast',cost:120,hp:260,range:30,radius:1.4,barY:6.4,boost:16,blurb:'Reveals Phantoms and Burrowers within 30 m. Towers within 16 m reach 10% further.',
+    icon:'<path d="M12 21V11"/><path d="M8 21h8"/><path d="M5 8a7 7 0 0 1 14 0"/><path d="M8 8a4 4 0 0 1 8 0"/><circle cx="12" cy="9" r="1.3"/>'},
+  silo:{key:'⇧3',name:'Missile Silo',cost:260,hp:340,range:60,minRange:12,dmg:110,rate:5,splash:4,radius:2.1,barY:4.4,blurb:'Very long-range missiles that hit ground and air. Cannot fire up close.',
+    icon:'<rect x="5" y="14" width="14" height="6" rx="1"/><path d="M12 3l2.5 4v7h-5V7z"/><path d="M9.5 11l-2 2M14.5 11l2 2"/>'},
   shield:{key:'9',name:'Shield Generator',cost:160,hp:350,range:14,cap:420,regen:28,radius:1.8,barY:4.6,blurb:'Projects a dome that soaks up damage for everything within 14 m.',
     icon:'<path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16v4M8 20h8"/><circle cx="12" cy="16" r="1.6"/>'},
   rail:{key:'8',name:'Rail Cannon',cost:220,hp:270,range:52,dmg:170,rate:3.6,radius:1.9,barY:3.6,blurb:'Long-range slug that always picks the toughest hostile in reach.',
@@ -954,8 +960,9 @@ function applyTankTier(){
   if(ghosts.tank){ scene.remove(ghosts.tank); delete ghosts.tank; }
   const card=document.querySelector('.card[data-type="tank"] .nm'); if(card) card.textContent=t.name;
 }
-const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship','bulwark','sniper','pyro','drone','mortarcrew','shock','demo','strider','stinger','commando','jammer','spear'];
+const ORDER=['sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship','bulwark','sniper','pyro','drone','mortarcrew','shock','demo','strider','stinger','commando','jammer','spear','repair','radar','silo'];
 const KEY_IDX={Digit1:0,Digit2:1,Digit3:2,Digit4:3,Digit5:4,Digit6:5,Digit7:6,Digit8:7,Digit9:8,Digit0:9,Minus:10,Equal:11,BracketLeft:12,BracketRight:13,KeyJ:14,KeyK:15,KeyL:16,KeyN:17,KeyY:18,KeyI:19,KeyO:20,KeyB:21,Comma:22,Period:23,Semicolon:24,Slash:25};
+const SHIFT_IDX={Digit1:26,Digit2:27,Digit3:28};
 const UNIT_CAP=12, UNIT_CAP_MAX=20;
 function unitCap(){ return Math.min(UNIT_CAP_MAX, UNIT_CAP+2*sites.filter(s=>s.alive&&!s.isHQ).length); }
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
@@ -1057,7 +1064,7 @@ function renderMods(){
   $('modNote').innerHTML=on.length?on.map(m=>'<b>'+m[1]+'</b>: '+m[2]).join('<br>')+(on.length<3?'<br>Win with 3 or more on for the Daredevil medal.':''):'Optional twists for campaign and Endless. Win a level with 3 or more on for the Daredevil medal.';
 }
 const TOWER_LEVEL={}; ORDER_INIT();
-function ORDER_INIT(){ for(const t of ['stinger','commando','jammer','spear','mortarcrew','shock','demo','strider','bulwark','sniper','pyro','drone','sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
+function ORDER_INIT(){ for(const t of ['repair','radar','silo','stinger','commando','jammer','spear','mortarcrew','shock','demo','strider','bulwark','sniper','pyro','drone','sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
 
 // atk: shot = hitscan rifle fire, shell = lobbed splash round, melee = strike (cleave hits everything near the target), blast = suicide charge
 const FOES={
@@ -1320,6 +1327,34 @@ function modelRocket(){
   });
   return {g,head};
 }
+function modelRepair(){
+  const g=new THREE.Group();
+  part(G.box,M.hullDark,3.0,1.0,3.0,0,0.5,0,g); part(G.box,M.hull,2.6,1.4,2.2,0,1.6,0.2,g);
+  const head=new THREE.Group(); head.position.y=2.6; g.add(head);
+  const cross=std(0x7dffa0,{emissive:0x3dff70,emissiveIntensity:0.9});
+  part(G.box,cross,1.2,0.3,0.3,0,0.4,0,head).castShadow=false; part(G.box,cross,0.3,0.3,1.2,0,0.4,0,head).castShadow=false;
+  part(G.box,M.steel,0.18,0.18,2.2,0.9,0.1,0,head); part(G.box,M.steel,0.5,0.25,0.25,0.9,0.1,-1.1,head);
+  return {g,head};
+}
+function modelRadar(){
+  const g=new THREE.Group();
+  part(G.cylT,M.hullDark,1.5,0.8,1.5,0,0.4,0,g); part(G.box,M.steel,0.35,4.6,0.35,0,3.0,0,g);
+  for(const sd of [-1,1]) part(G.box,M.steel,0.12,3.6,0.12,sd*0.55,2.3,0,g).rotation.z=sd*0.18;
+  const head=new THREE.Group(); head.position.y=5.4; g.add(head);
+  const dish=part(G.cyl,M.hull,2.4,0.14,1.2,0,0.3,0,head); dish.rotation.x=1.25;
+  part(G.ico,M.ally,0.22,0.22,0.22,0,0.6,-0.6,head).castShadow=false;
+  return {g,head};
+}
+function modelSilo(){
+  const g=new THREE.Group();
+  part(G.box,M.hullDark,3.4,1.2,3.4,0,0.6,0,g); part(G.box,M.hull,2.8,0.4,2.8,0,1.3,0,g);
+  for(const sd of [-1,1]) part(G.box,M.steel,1.3,0.14,2.6,sd*1.15,1.55,0,g).rotation.z=sd*0.9;
+  const head=new THREE.Group(); head.position.y=1.5; g.add(head);
+  part(G.cyl,M.hull,0.7,3.2,0.7,0,1.7,0,head); const nose=part(G.cone6,M.amber,0.7,0.9,0.7,0,3.75,0,head); nose.castShadow=false;
+  for(let i=0;i<4;i++){ const a=i/4*TAU; part(G.box,M.hullDark,0.08,0.7,0.5,Math.cos(a)*0.4,0.5,Math.sin(a)*0.4,head).rotation.y=-a; }
+  g.userData.missile=head;
+  return {g,head};
+}
 function modelShield(){
   const g=new THREE.Group();
   part(G.cyl6,M.hullDark,1.8,0.7,1.8,0,0.35,0,g);
@@ -1436,7 +1471,7 @@ function modelSpear(){
   g.userData.hover=true;
   return {g,head};
 }
-const MODEL={stinger:modelStinger,commando:modelCommando,jammer:modelJammer,spear:modelSpear,mortarcrew:modelMortarCrew,shock:modelShock,demo:modelDemo,strider:modelStrider,bulwark:modelBulwark,sniper:modelSniper,pyro:modelPyro,drone:modelDrone,shield:modelShield,gunship:modelGunship,rail:modelRail,rocket:modelRocket,sentry:modelSentry,mortar:modelMortar,frost:modelFrost,wall:modelWall,pump:modelPump,tesla:modelTesla,flak:modelFlak,trooper:modelTrooper,engineer:modelEngineer,tank:modelTank};
+const MODEL={repair:modelRepair,radar:modelRadar,silo:modelSilo,stinger:modelStinger,commando:modelCommando,jammer:modelJammer,spear:modelSpear,mortarcrew:modelMortarCrew,shock:modelShock,demo:modelDemo,strider:modelStrider,bulwark:modelBulwark,sniper:modelSniper,pyro:modelPyro,drone:modelDrone,shield:modelShield,gunship:modelGunship,rail:modelRail,rocket:modelRocket,sentry:modelSentry,mortar:modelMortar,frost:modelFrost,wall:modelWall,pump:modelPump,tesla:modelTesla,flak:modelFlak,trooper:modelTrooper,engineer:modelEngineer,tank:modelTank};
 
 // ---------------------------------------------------------------- ground-hugging rings
 function makeRing(color,opacity){
@@ -1877,7 +1912,7 @@ function cpoint(s,x,z){
   CP.nx=dx/L; CP.nz=dz/L; CP.d=L-s.radius; CP.px=s.x+CP.nx*s.radius; CP.pz=s.z+CP.nz*s.radius; return CP;
 }
 const lvlMul=(s,k)=>1+k*(s.level-1);
-const sRange=s=>s.def.range*lvlMul(s,0.12)*(pk('marks')&&!s.isSite?1.12:1);
+const sRange=s=>s.def.range*lvlMul(s,0.12)*(pk('marks')&&!s.isSite?1.12:1)*(s.boostT>0&&s.type!=='radar'?1.1:1);
 const sDmg=s=>s.def.dmg*lvlMul(s,0.45);
 const upCost=s=>Math.round(s.def.cost*0.8*s.level);
 const sellValue=s=>Math.round(s.spent*0.5);
@@ -2530,7 +2565,8 @@ window.addEventListener('keydown',e=>{
   if(S.mode!=='inter'&&S.mode!=='wave') return;
   const k=e.code;
   if(k==='Enter'&&e.target&&e.target.tagName==='BUTTON') e.preventDefault();
-  if(k in KEY_IDX){const i=KEY_IDX[k]; if(ORDER[i]) setBuild(S.build===ORDER[i]?null:ORDER[i]);}
+  if(e.shiftKey&&k in SHIFT_IDX){const i=SHIFT_IDX[k]; if(ORDER[i]) setBuild(S.build===ORDER[i]?null:ORDER[i]);}
+  else if(k in KEY_IDX){const i=KEY_IDX[k]; if(ORDER[i]) setBuild(S.build===ORDER[i]?null:ORDER[i]);}
   else if(k==='KeyZ') useAbility('strike');
   else if(k==='KeyC') useAbility('pulse');
   else if(k==='KeyV') useAbility('emp');
@@ -2679,6 +2715,9 @@ function refreshSel(force){
   if(['sentry','mortar','frost','tesla','flak','rail'].includes(s.type)) lines.push('Range <b>'+sRange(s).toFixed(0)+' m</b> &middot; Damage <b>'+sDmg(s).toFixed(0)+'</b>');
   if(s.type==='mortar') lines.push('Blast radius <b>'+d.splash+' m</b>, dead zone <b>'+d.minRange+' m</b>');
   if(s.type==='frost') lines.push('Slows hostiles by <b>50%</b>');
+  if(s.type==='repair') lines.push('Repairs <b>'+Math.round(d.heal*lvlMul(s,0.4))+'</b> hull a second to everything within '+Math.round(sRange(s))+' m');
+  if(s.type==='radar') lines.push('Reveals hidden hostiles within '+Math.round(sRange(s))+' m &middot; boosts towers within '+Math.round(d.boost*lvlMul(s,0.15))+' m');
+  if(s.boostT>0&&s.type!=='radar') lines.push('<b>Radar boost</b>: 10% more range');
   if(s.type==='pump') lines.push('Earns <b>'+Math.round(d.income*lvlMul(s,0.6))+'</b> supply every 3 s');
   if(s.type==='wall') lines.push('Soaks damage and blocks movement');
   if(s.isHQ) lines.push('If this falls, the level is lost');
@@ -3427,7 +3466,7 @@ function updatePlayer(dt){
 // ---------------------------------------------------------------- update: structures
 let pumpIncome=0;
 // Targeting modes: near (closest to the tower), strong (most health), first (closest to the site it is heading for), air (flyers first).
-const TM_TYPES=['sentry','mortar','tesla','rail'];
+const TM_TYPES=['sentry','mortar','tesla','rail','silo'];
 function towerTarget(s,range,minRange,ground){
   const mode=s.tmode||(s.type==='rail'?'strong':'near'), R2=range*range, mn=(minRange||0)*(minRange||0);
   let best=null, score=Infinity;
@@ -3448,6 +3487,7 @@ function updateStructures(dt){
   pumpIncome=0;
   for(const s of structures){
     curSrc=s;
+    if(s.boostT>0) s.boostT-=dt;
     if(s.hit>0){s.hit-=dt; const k=1+0.09*(s.level-1); s.g.scale.setScalar(k*(1+Math.max(0,s.hit)*0.4));}
     const y=H(s.x,s.z);
     if(s.isSite){
@@ -3540,6 +3580,26 @@ function updateStructures(dt){
       const R=sRange(s), f=s.energy/cap; s.dome.scale.setScalar(R); s.dome.visible=f>0.02;
       s.dome.material.opacity=0.05+0.12*f+(s.absorbT>0?0.18:0);
       s.head.rotation.y+=dt*1.5; s.head.position.y=3.9+Math.sin(S.time*2+s.phase)*0.15;
+    } else if(s.type==='repair'){
+      s.head.rotation.y+=dt*1.2; s.cd-=dt;
+      if(s.cd<=0){ s.cd=1; const R=sRange(s), amt=s.def.heal*lvlMul(s,0.4); let any=false;
+        for(const u of units){ if(u.alive&&u.hp<u.maxHp&&Math.hypot(u.x-s.x,u.z-s.z)<R+u.radius){ u.hp=Math.min(u.maxHp,u.hp+amt); any=true; } }
+        for(const o of structures){ if(o!==s&&o.alive&&o.hp<o.maxHp&&cpoint(o,s.x,s.z).d<R){ o.hp=Math.min(o.maxHp,o.hp+amt); any=true; } }
+        if(player.alive&&player.hp<player.maxHp&&Math.hypot(player.x-s.x,player.z-s.z)<R){ player.hp=Math.min(player.maxHp,player.hp+amt); any=true; }
+        if(any){ s.pulseT=(s.pulseT||0)+1; if(s.pulseT%2===0) pulse(s.x,s.z,R,0x7dffa0); } }
+    } else if(s.type==='radar'){
+      s.head.rotation.y+=dt*1.8; s.cd-=dt;
+      if(s.cd<=0){ s.cd=0.25; const R2=sRange(s)**2, B=s.def.boost*lvlMul(s,0.15);
+        for(const e of enemies){ if(e.dead) continue; const dx=e.x-s.x,dz=e.z-s.z; if(dx*dx+dz*dz<R2){ if(e.def.cloak) e.revealT=Math.max(e.revealT||0,0.6); if(e.burrowed) e.spotT=0.6; } }
+        for(const o of structures){ if(o!==s&&!o.isSite&&Math.hypot(o.x-s.x,o.z-s.z)<B) o.boostT=0.6; } }
+    } else if(s.type==='silo'){
+      s.scan-=dt; if(s.scan<=0){ s.scan=0.4; s.tgt=towerTarget(s,sRange(s),s.def.minRange,false); }
+      const t=s.tgt; s.cd-=dt; s.head.visible=s.cd<s.def.rate*0.6;
+      if(t&&!t.dead&&s.cd<=0){ s.cd=s.def.rate;
+        const dist=Math.hypot(t.x-s.x,t.z-s.z), dur=1.1+dist*0.018, tx=t.x+(t.vx||0)*dur, tz=t.z+(t.vz||0)*dur;
+        fireShell(s.x,y+5,s.z,tx,tz,dur,16+dist*0.2,'ally',{dmg:sDmg(s),splash:s.def.splash,src:s,air:true});
+        boom(s.x,y+4,s.z,2,0xffb060,0.3); sfx('thump',s.x,s.z); addShake(0.08,s.x,s.z); }
+      else if(!t||t.dead) s.cd=Math.max(0,s.cd);
     } else if(s.type==='pump'){
       s.head.position.y=1+Math.abs(Math.sin(S.time*2.2+s.phase))*0.7;
       const inc=Math.round(s.def.income*lvlMul(s,0.6)); pumpIncome+=inc/s.def.rate;
@@ -3566,7 +3626,7 @@ function updateProjectiles(dt){
       scene.remove(p.m); projectiles.splice(i,1);
       if(p.side==='ally'){
         const R=p.data.splash; curSrc=p.data.src||null;
-        for(const e of enemies){ if(e.dead||e.def.fly) continue; const d=Math.hypot(e.x-p.tx,e.z-p.tz); if(d<R+e.def.r) hurtEnemy(e,p.data.dmg*(p.data.wreck?0.5:1)*(1-0.5*clamp(d/R,0,1))); }
+        for(const e of enemies){ if(e.dead||(e.def.fly&&!p.data.air)) continue; const d=Math.hypot(e.x-p.tx,e.z-p.tz); if(d<R+e.def.r) hurtEnemy(e,p.data.dmg*(p.data.wreck?0.5:1)*(1-0.5*clamp(d/R,0,1))); }
         for(const f of foeStructs){ if(f.dead) continue; const d=Math.max(0,cpoint(f,p.tx,p.tz).d); if(d<R) hurtFoe(f,p.data.dmg*(p.data.wreck||1)*(1-0.5*clamp(d/R,0,1))); }
         boom(p.tx,p.ty,p.tz,R*0.9,0xffb04a,0.45); sfx('boom',p.tx,p.tz); curSrc=null;
       } else {
