@@ -271,6 +271,12 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 #toast b{display:block;font-family:var(--display);font-size:15px;letter-spacing:.03em}
 #toast span{font-size:12.5px;color:var(--mute)}
 #medalGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+ #careerBox{margin-bottom:18px} #careerBox h2{font-family:var(--display);font-size:18px;margin:0 0 10px}
+.careerGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.careerGrid div{border:1px solid var(--line);border-radius:6px;padding:9px 11px;display:grid;gap:2px}
+.careerGrid .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.careerGrid b{font-family:var(--display);font-size:17px}
+@media (max-width:560px){ .careerGrid{grid-template-columns:repeat(2,1fr)} }
 .medal{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:10px 12px}
 .medal.got{border-color:rgba(240,178,58,.5)}
 .medal b{display:block;font-family:var(--display);font-size:14px;letter-spacing:.03em}
@@ -480,6 +486,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
   <div id="medals" class="screen" hidden>
     <div class="sheet">
       <div class="gtop"><div><div class="eyebrow" id="medalCount">Medals</div><h1>Medal <span>case</span></h1></div><button class="go" id="medalsClose" type="button">Close</button></div>
+      <div id="careerBox"></div>
       <div id="medalGrid"></div>
     </div>
   </div>
@@ -671,7 +678,7 @@ const LEVELS=[
    sites:[{name:'Command HQ',x:0,z:20},{name:'Spire North',x:-150,z:-130},{name:'Spire East',x:155,z:-125},{name:'Spire South',x:150,z:150},{name:'Spire West',x:-150,z:145}],
    spawns:[{a:300,to:1},{a:330,to:1},{a:30,to:2},{a:60,to:2},{a:120,to:3},{a:150,to:3},{a:210,to:4},{a:240,to:4},{a:90,to:0},{a:270,to:0}],k0:2,kStep:2},
   {name:'Storm Front',foe:{x:-190,z:-190},blurb:'Rain and wind on an open plain. Swarms of drones and carriers ride the storm, and Stalkers hunt your squads.',towers:['sentry','wall','mortar','frost','flak','pump','tesla','rail','shield','trooper','engineer','tank','rocket','gunship'],waves:14,off:5,supply:1050,allow:1,bosses:[7,14],foeHp:1.9,
-   mix:{wasp:1.6,carrier:1.6,stalker:1.4,phantom:1.2},
+   mix:{wasp:1.6,carrier:1.6,stalker:1.4,phantom:1.2,bomber:1.6},
    ter:{ox:7300,oz:-3100,amp:0.9,cA:0x4c5a4a,cB:0x66705a,sky:0x3a4450,weather:'rain'},
    sites:[{name:'Command HQ',x:0,z:10},{name:'Relay Alpha',x:150,z:-120},{name:'Relay Bravo',x:170,z:120},{name:'Relay Charlie',x:-160,z:120}],
    spawns:[{a:40,to:1},{a:70,to:1},{a:110,to:2},{a:140,to:2},{a:220,to:3},{a:250,to:3},{a:0,to:0},{a:180,to:0}],k0:2,kStep:2},
@@ -967,11 +974,12 @@ const UNIT_CAP=12, UNIT_CAP_MAX=20;
 function unitCap(){ return Math.min(UNIT_CAP_MAX, UNIT_CAP+2*sites.filter(s=>s.alive&&!s.isHQ).length); }
 const HQDEF={name:'Command HQ',hp:4000,radius:6.2,barY:12};
 const OUTDEF={name:'Outpost',hp:2200,radius:4.4,barY:9};
-const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],mender:['mender','menders'],stalker:['stalker','stalkers'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],colossus:['Colossus','Colossi'],boss:['boss','bosses']};
+const FOE_NAMES={grunt:['grunt','grunts'],runner:['runner','runners'],brute:['brute','brutes'],siege:['siege crawler','siege crawlers'],sapper:['sapper','sappers'],warden:['warden','wardens'],mender:['mender','menders'],stalker:['stalker','stalkers'],wasp:['wasp drone','wasp drones'],brood:['brood','broods'],juggernaut:['juggernaut','juggernauts'],burrower:['burrower','burrowers'],carrier:['carrier','carriers'],phantom:['phantom','phantoms'],colossus:['Colossus','Colossi'],bomber:['bomber','bombers'],boss:['boss','bosses']};
 const FOE_TIPS={
   sapper:['Sappers sighted','They sprint at your structures and blow up. Kill them before they arrive.'],
   warden:['Wardens sighted','Their purple field halves damage to every hostile inside it. Kill the Warden first, or use Tesla Coils.'],
   colossus:['The Colossus is coming','Their last war machine. Armour blunts small arms, it shells anything near, and it summons Stalkers. Hit it with everything.'],
+  bomber:['Bombers sighted','Heavy flyers that cross every wall to bomb your towers. They ignore troops. Flak, Stingers, the Missile Silo and gunships bring them down.'],
   mender:['Menders sighted','Their green field repairs every hostile inside it. Snipers, Commandos and Rail Cannons can pick them off from range.'],
   stalker:['Stalkers sighted','Fast hunters that go for your squads and ignore your towers. Keep troops near guns, or use Bulwarks to draw them.'],
   wasp:['Wasp drones sighted','They fly over barricades. Mortars and tanks cannot hit them. Use sentries, rifles or Flak.'],
@@ -1084,6 +1092,7 @@ const FOES={
   burrower:{hp:300,speed:6.5,dmg:30,rate:1.0,range:1.8,atk:'melee',cleave:2.2,reward:22,r:1.2,aggro:80,barY:2.8,burrow:true},
   mender:{hp:140,speed:4.2,dmg:6,rate:1.2,range:12,atk:'shot',reward:14,r:0.9,aggro:16,barY:3.3,mend:10},
   stalker:{hp:170,speed:11,dmg:26,rate:0.8,range:1.4,atk:'melee',reward:12,r:0.8,aggro:45,barY:2.2,hunter:true},
+  bomber:{hp:260,speed:7,dmg:55,rate:2.2,range:1.5,atk:'bomb',splash:4.5,reward:22,r:1.3,aggro:90,barY:2.4,fly:true,sapper:true},
   carrier:{hp:950,speed:3,dmg:0,rate:99,range:16,atk:'none',reward:50,r:2.4,aggro:20,barY:2.8,fly:true,carrier:7},
 };
 
@@ -1210,6 +1219,11 @@ function modelFoe(type){
     part(G.box,M.foeDark,1.6,1.8,0.25,0,1.5,-0.7,body);
     part(G.box,M.ward,1.0,0.16,0.08,0,2.75,-0.42,body);
     const ring=new THREE.Mesh(ringGeo,M.ward); ring.scale.setScalar(FOES.warden.aura); ring.position.y=0.3; g.add(ring);
+  } else if(type==='bomber'){
+    part(G.box,M.foe,1.2,0.7,3.0,0,0,0,body); part(G.box,M.foeDark,4.4,0.14,1.1,0,0.15,0.2,body);
+    part(G.box,M.foeDark,1.6,0.12,0.6,0,0.35,1.35,body); part(G.box,M.foeGlow,0.6,0.12,0.06,0,0.05,-1.52,body).castShadow=false;
+    for(const sd of [-1,1]){ part(G.cyl,M.foeDark,0.35,0.9,0.35,sd*1.4,0,0,body).rotation.x=Math.PI/2; part(G.ico,M.foeGlow,0.18,0.18,0.18,sd*1.4,0,0.48,body).castShadow=false; }
+    part(G.box,M.foeGlow,0.5,0.3,0.6,0,-0.45,0,body).castShadow=false;
   } else if(type==='wasp'){
     part(G.ico,M.foe,0.6,0.45,1,0,0,0,body);
     part(G.box,M.foeGlow,0.4,0.12,0.06,0,0.05,-0.95,body);
@@ -1693,7 +1707,17 @@ function award(id){
   $('toastName').textContent=m[1]; $('toastDesc').textContent=m[2];
   const t=$('toast'); t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),4200); sfx('pickup');
 }
+function career(){ PROG.career=PROG.career||{kills:0,wins:0,losses:0,time:0,built:0,waves:0,dep:{}}; return PROG.career; }
+function logRun(won){ if(S.training||S.vs) return; const c=career(); c.kills+=S.kills||0; c.built+=S.built||0; c.time+=Math.floor(S.time||0); c.waves+=Math.max(0,won?S.wave:S.wave-1); if(won) c.wins++; else c.losses++; saveProg(); }
+function renderCareer(){
+  const c=career(), el=$('careerBox'); if(!el) return;
+  const fav=(pred)=>{ let b=null,bn=0; for(const t in c.dep){ if(BUILD[t]&&pred(BUILD[t])&&c.dep[t]>bn){bn=c.dep[t];b=t;} } return b?BUILD[b].name+' ('+bn+')':'None yet'; };
+  const hrs=Math.floor(c.time/3600), mins=Math.floor(c.time%3600/60);
+  const cell=(l,v)=>'<div><span class="lbl">'+l+'</span><b>'+v+'</b></div>';
+  el.innerHTML='<h2>Service record</h2><div class="careerGrid">'+cell('Battles won',c.wins)+cell('Battles lost',c.losses)+cell('Waves held',c.waves)+cell('Hostiles destroyed',c.kills.toLocaleString('en-AU'))+cell('Deployed',c.built.toLocaleString('en-AU'))+cell('Time in the field',(hrs?hrs+' h ':'')+mins+' min')+cell('Favourite tower',fav(d=>!d.unit))+cell('Favourite squad',fav(d=>d.unit))+cell('Daily ops won',Object.values(PROG.daily||{}).filter(r=>r.won).length)+'</div>';
+}
 function renderMedals(){
+  renderCareer();
   const got=PROG.medals||{}, n=MEDALS.filter(m=>got[m[0]]).length;
   $('medalCount').textContent=n+' of '+MEDALS.length+' earned';
   const box=$('medalGrid'); box.innerHTML='';
@@ -1797,7 +1821,7 @@ function waveCounts(n,lvl){
   const c=baseCounts(n,lvl), mix=LV().mix;
   const late=lvl>=5||!!LV().endless; c.juggernaut=(late&&n>=6)?Math.floor((n-4)/3):0; c.phantom=(late&&n>=7)?Math.floor((n-4)/2):0;
   c.burrower=((lvl>=6||LV().endless)&&n>=6)?Math.floor((n-4)/3):0; c.carrier=((lvl>=7||LV().endless)&&n>=8)?Math.floor((n-6)/4):0;
-  c.mender=((lvl>=3||LV().endless)&&n>=5)?Math.floor((n-2)/3):0; c.stalker=((lvl>=4||LV().endless)&&n>=4)?Math.floor((n-1)/2):0;
+  c.mender=((lvl>=3||LV().endless)&&n>=5)?Math.floor((n-2)/3):0; c.bomber=((lvl>=6||LV().endless)&&n>=6)?Math.floor((n-4)/3):0; c.stalker=((lvl>=4||LV().endless)&&n>=4)?Math.floor((n-1)/2):0;
   if(mix) for(const k in mix) if(c[k]!==undefined) c[k]=Math.round(c[k]*mix[k]);
   return c;
 }
@@ -1995,7 +2019,7 @@ function killPlayer(){
 }
 function gameOver(why){
   if(S.vs){ vsEnd(false,why); return; }
-  if(S.daily) recordDaily(false); else clearSave();
+  logRun(false); if(S.daily) recordDaily(false); else clearSave();
   $('againBtn').textContent='Retry'; $('overLvls').textContent='Level select';
   S.mode='over'; setBuild(null); select(null); sfx('lost');
   $('oWhy').textContent=why+' \u00b7 '+(S.endless?'Endless, best '+(PROG.endlessBest||0)+' waves':'Level '+(S.lvl+1)+', '+LV().name);
@@ -2023,7 +2047,7 @@ function winLevel(how){
   S.mode='won'; setBuild(null); select(null); sfx('clear');
   const L=LV(), total=sites.length, held=sites.filter(s=>s.alive).length, stars=Math.max(1,3-S.lost-(hq.hp<hq.maxHp*0.5?1:0));
   PROG.stars[S.lvl]=Math.max(PROG.stars[S.lvl]||0,stars); clearSave();
-  recordDaily(true,stars); award('first_win'); if(stars>=3) award('flawless'); if((S.mods||[]).length>=3) award('daredevil'); if(how==='base') award('breaker');
+  logRun(true); recordDaily(true,stars); award('first_win'); if(stars>=3) award('flawless'); if((S.mods||[]).length>=3) award('daredevil'); if(how==='base') award('breaker');
   if(LEVELS.every((L2,k)=>k===S.lvl||PROG.stars[k]>0)) award('campaign');
   if(S.lvl+2>PROG.unlocked) PROG.unlocked=Math.min(LEVELS.length,S.lvl+2);
   saveProg();
@@ -2651,7 +2675,7 @@ function clickAt(ndc,sc){
   if(S.build){
     const why=placeCheck(S.build,p.x,p.z,S.rot);
     if(why){ sfx('deny'); floatText(p.x,H(p.x,p.z)+2,p.z,why,COL.hostile); return; }
-    const def=BUILD[S.build]; S.supply-=def.cost; S.built++;
+    const def=BUILD[S.build]; S.supply-=def.cost; S.built++; if(!S.training&&!S.vs){ const cr=career(); cr.dep[S.build]=(cr.dep[S.build]||0)+1; }
     const s=def.unit?addUnit(S.build,p.x,p.z):addStructure(S.build,p.x,p.z,S.build==='wall'?S.rot:0);
     if(S.built>=30&&!S.training) award('builder');
     boom(s.x,H(s.x,s.z)+0.5,s.z,3,COL.ally,0.35); sfx('build');
@@ -3171,6 +3195,7 @@ const FOE_GUIDE={
   siege:['shell','Artillery. Lobs splash shells from 25 m, beyond basic sentries.','Mortars (44 m), tanks, airstrikes or the rover. Rank-3 sentries reach 27 m.'],
   sapper:['blast','Sprints at your nearest structure and explodes. Ignores troops and the rover.','Kill it early. Barricades in front take the blast instead of your guns.'],
   warden:['shot','Its purple field halves damage to every hostile inside it.','Kill the Warden first. Tesla Coils pierce the field.'],
+  bomber:['air','Heavy flyer that ignores troops and the rover, crosses walls and drops bombs on your nearest structure.','Flak Batteries, Stinger Teams, Missile Silos, gunships and Rail Cannons.'],
   mender:['shot','Its green field repairs every hostile inside it, a few percent of their hull each second.','Kill it first from range: Snipers, Commandos, Rail Cannon, Stingers.'],
   stalker:['melee','Fast hunter. Charges your squads and ignores towers while any squad is within 45 m.','Keep squads inside tower cover. Bulwarks draw it in, Shock Troopers stun it.'],
   wasp:['air','Flying drone. Crosses barricades. Mortars and tanks cannot hit it.','Sentries, Rifle Squads, Rocket Squads, Flak Batteries, Titan machine guns.'],
@@ -3182,7 +3207,7 @@ const FOE_GUIDE={
   colossus:['melee','A towering war machine on the last wave of Iron Heart. Huge hull, armour that blunts small arms, a fast shell barrage, and it calls in Stalkers every 12 s.','Everything you have: Rail Cannons, tanks, Spear beams, airstrikes and EMP. Keep squads spread out and kill the Stalkers it summons.'],
   boss:['melee','Every 5th wave or so. Cleaving melee plus a three-shell barrage every 6 s.','Rail Cannon, tanks, airstrike, EMP to buy time. Keep troops spread out.'],
 };
-const FOE_FIRST={colossus:'Level 12',mender:'Level 4',stalker:'Level 5',burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
+const FOE_FIRST={bomber:'Level 7',colossus:'Level 12',mender:'Level 4',stalker:'Level 5',burrower:'Level 7',carrier:'Level 8',grunt:'Level 1',runner:'Level 1',brute:'Level 1',siege:'Level 1',sapper:'Level 1',warden:'Level 1',wasp:'Level 2',brood:'Level 2',juggernaut:'Level 6',phantom:'Level 6',boss:'Level 3'};
 const GUIDE=[
   {id:'goal',name:'Goal',html:()=>`
     <h2>Hold the line</h2>
@@ -3733,6 +3758,7 @@ function updateEnemies(dt){
         const dm=d.dmg*DF().dmg*foeDmgScale();
         if(d.atk==='none'){ }
         else if(d.atk==='blast'){ sapperBlast(e); continue; }
+        else if(d.atk==='bomb'){ for(let k=0;k<2;k++) fireShell(e.x+rand(-0.6,0.6),H(e.x,e.z)+FLY_H,e.z+rand(-0.6,0.6),tx+rand(-1.2,1.2),tz+rand(-1.2,1.2),0.55+k*0.12,0,'foe',{dmg:dm*0.5,splash:d.splash,target:t}); sfx('thump',e.x,e.z); }
         else if(d.atk==='shell'){ const fl=1.2+L*0.03; fireShell(e.x,H(e.x,e.z)+2.4,e.z,tx+rand(-1.5,1.5),tz+rand(-1.5,1.5),fl,6+L*0.3,'foe',{dmg:dm,splash:d.splash,target:t}); sfx('thump',e.x,e.z); }
         else if(d.atk==='shot'){
           const ey=H(e.x,e.z)+(d.fly?FLY_H:1.5), moving=(t===player||t.isUnit);
