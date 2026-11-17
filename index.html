@@ -215,6 +215,13 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 #speedBtn.fast{color:var(--signal);border-color:var(--signal)}
 #helpBtn{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px));background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:5px 10px;font-family:var(--display);font-size:11px;letter-spacing:.08em;color:var(--mute)}
 .opts{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.mods{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:12px}
+.mods .chips{display:flex;flex-wrap:wrap;gap:6px}
+.mods .chips button{background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--mute)}
+.mods .chips button.on{border-color:var(--hostile);color:var(--hostile);background:rgba(227,98,63,.12)}
+
+.abil.off{opacity:.3;filter:grayscale(1)}
+#modNote{flex-basis:100%;font-size:12px;color:var(--mute);line-height:1.5}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
 .seg button{background:transparent;border:0;border-right:1px solid var(--line);padding:7px 12px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--mute)}
 .seg button:last-child{border-right:0}
@@ -455,6 +462,7 @@ button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
       <div class="btnRow"><button class="go" id="contBtn" type="button" hidden>Continue</button><button class="go" id="vsBtn" type="button">Versus</button><button class="go alt" id="guideBtn" type="button">How to play</button><button class="go alt" id="manualBtn" type="button">Field manual</button><button class="go alt" id="medalsBtn" type="button">Medals</button></div>
       <div class="levels" id="levels"></div>
       <div class="opts"><span class="lbl">Difficulty</span><span class="seg" id="diffSeg"><button type="button" data-d="recruit">Recruit</button><button type="button" data-d="regular">Regular</button><button type="button" data-d="veteran">Veteran</button></span><span id="diffNote"></span><span class="lbl">Graphics</span><span class="seg" id="gfxSeg"><button type="button" data-g="high">High</button><button type="button" data-g="medium">Medium</button><button type="button" data-g="low">Low</button></span></div>
+      <div class="mods"><span class="lbl">Modifiers</span><span class="chips" id="modChips"></span><span id="modNote"></span></div>
       <div class="brief">
         <div><b>Deploy close</b>You can only build inside the rover's ring, 22 m at first and wider as your rover improves. Drive to each site you need to hold.</div>
         <div><b>Read the map</b>Red wedges and lines on the sector map show where the next wave lands and what it is after.</div>
@@ -940,6 +948,27 @@ let OPT={diff:'regular',speed:1,help:true,sound:'all',gfx:(window.matchMedia&&wi
 try{ const o=JSON.parse(localStorage.getItem('ifv-options')||'null'); if(o) OPT=Object.assign(OPT,o); if(!DIFFS[OPT.diff]) OPT.diff='regular'; }catch(e){}
 function saveOpt(){ try{localStorage.setItem('ifv-options',JSON.stringify(OPT));}catch(e){} }
 const DF=()=>DIFFS[OPT.diff];
+// Challenge modifiers: optional twists for campaign and Endless runs. Versus and Boot Camp ignore them.
+const MODS=[
+  ['swarm','Swarm','Half again as many hostiles, each a quarter weaker.'],
+  ['ironclad','Ironclad','Hostiles have 40% more hull.'],
+  ['lean','Lean supply','40% less starting supply, wave bonus and HQ trickle.'],
+  ['blitz','Blitz','Breaks between waves are half as long.'],
+  ['noabil','No air support','Airstrike, repair pulse and EMP are switched off.'],
+  ['glass','Glass rover','Your rover has half its hull.'],
+];
+if(!Array.isArray(OPT.mods)) OPT.mods=[]; OPT.mods=OPT.mods.filter(m=>MODS.some(x=>x[0]===m));
+const hasMod=m=>!!(S.mods&&S.mods.includes(m));
+const modSup=()=>hasMod('lean')?0.6:1;
+const modHp=()=>(hasMod('ironclad')?1.4:1)*(hasMod('swarm')?0.75:1);
+function renderMods(){
+  const box=$('modChips'); if(!box) return;
+  if(!box.childElementCount) MODS.forEach(([id,nm,ds])=>{ const b=document.createElement('button'); b.type='button'; b.dataset.m=id; b.textContent=nm; b.title=ds;
+    b.addEventListener('click',()=>{ b.blur(); OPT.mods=OPT.mods.includes(id)?OPT.mods.filter(x=>x!==id):OPT.mods.concat(id); saveOpt(); renderMods(); }); box.appendChild(b); });
+  box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',OPT.mods.includes(b.dataset.m)));
+  const on=MODS.filter(m=>OPT.mods.includes(m[0]));
+  $('modNote').innerHTML=on.length?on.map(m=>'<b>'+m[1]+'</b>: '+m[2]).join('<br>')+(on.length<3?'<br>Win with 3 or more on for the Daredevil medal.':''):'Optional twists for campaign and Endless. Win a level with 3 or more on for the Daredevil medal.';
+}
 const TOWER_LEVEL={}; ORDER_INIT();
 function ORDER_INIT(){ for(const t of ['stinger','commando','jammer','spear','mortarcrew','shock','demo','strider','bulwark','sniper','pyro','drone','sentry','mortar','frost','wall','pump','tesla','flak','rail','shield','trooper','engineer','tank','rocket','gunship']){ TOWER_LEVEL[t]=LEVELS.findIndex(L=>L.towers.includes(t))+1; } }
 
@@ -1525,6 +1554,7 @@ const MEDALS=[
   ['ironwill','Iron will','Reach wave 20 in Endless.'],
   ['campaign','Sector secured','Clear all twelve campaign levels.'],
   ['giantslayer','Giant slayer','Bring down the Colossus.'],
+  ['daredevil','Daredevil','Win a level with three or more modifiers on.'],
   ['combined','Combined arms','Field six different unit types at once.'],
   ['ghost','Ghost','Score 10 kills with a single Commando.'],
   ['skyguard','Sky guard','Bring down a Carrier with a Stinger Team.'],
@@ -1555,7 +1585,7 @@ function loadSave(){ try{ const sv=JSON.parse(localStorage.getItem(SAVE_KEY)||'n
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} renderContinue(); }
 function saveGame(){
   if(S.vs||S.training) return;
-  const sv={v:1,lvl:S.lvl,endless:!!S.endless,diff:OPT.diff,wave:S.wave,supply:Math.floor(S.supply),lost:S.lost,kills:S.kills,built:S.built,time:Math.floor(S.time),
+  const sv={v:1,lvl:S.lvl,endless:!!S.endless,diff:OPT.diff,mods:(S.mods||[]).slice(),wave:S.wave,supply:Math.floor(S.supply),lost:S.lost,kills:S.kills,built:S.built,time:Math.floor(S.time),
     rebuildAt:S.rebuildAt||0,rebuilds:S.rebuilds||0,
     sites:sites.map(st=>({alive:st.alive,hp:Math.round(st.hp)})),
     structs:structures.filter(st=>!st.isSite).map(st=>({tm:st.tmode||null,t:st.type,x:+st.x.toFixed(1),z:+st.z.toFixed(1),r:+(st.rot||0).toFixed(3),l:st.level,hp:Math.round(st.hp),sp:st.spent})),
@@ -1569,7 +1599,8 @@ function renderContinue(){
 }
 function continueGame(){
   const sv=loadSave(); if(!sv) return;
-  if(DIFFS[sv.diff]){ OPT.diff=sv.diff; saveOpt(); renderOpts(); }
+  if(DIFFS[sv.diff]){ OPT.diff=sv.diff; }
+  OPT.mods=Array.isArray(sv.mods)?sv.mods.filter(m=>MODS.some(x=>x[0]===m)):[]; saveOpt(); renderOpts();
   restoring=true; startLevel(sv.lvl,sv.endless); restoring=false;
   Object.assign(S,{wave:sv.wave,supply:sv.supply,lost:sv.lost,kills:sv.kills,built:sv.built,time:sv.time,mode:'inter',inter:25,rebuildAt:sv.rebuildAt,rebuilds:sv.rebuilds});
   sv.sites.forEach((d,i)=>{ const st=sites[i]; if(!st) return; if(!d.alive){ st.alive=false; scene.remove(st.g); structures=structures.filter(o=>o!==st); } else st.hp=Math.min(st.maxHp,d.hp); });
@@ -1594,8 +1625,9 @@ function startLevel(i,endless,vs,training){
   S.vs=vs||null; S.training=!!training; trainStop();
   if(!restoring&&!vs&&!training) clearSave();
   setupLevel(i,endless); const L=LV();
-  Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
-  RT=roverTier(); BUILD_R=RT.reach; player.maxHp=RT.hp; $('roverName').textContent='Rover hull · Mk '+['I','II','III'][RT.mk-1];
+  Object.assign(S,{winT:0,cd:{strike:0,pulse:0,emp:0},aiming:false,strikes:[],rebuildAt:0,rebuilds:0,ordered:false,crates:0,mode:'inter',supply:Math.round(L.supply*0.85*DF().supply*((vs||training||!OPT.mods.includes('lean'))?1:0.6)),wave:0,inter:40,queue:[],spawnT:0,spawns:[],kills:0,built:0,time:0,crateT:4,build:null,rot:0,sel:null,paused:false,lost:0});
+  S.mods=(vs||training)?[]:OPT.mods.slice();
+  RT=roverTier(); BUILD_R=RT.reach; player.maxHp=Math.round(RT.hp*(hasMod('glass')?0.5:1)); $('roverName').textContent='Rover hull · Mk '+['I','II','III'][RT.mk-1];
   rover=modelRover(RT.mk); scene.add(rover.g);
   Object.assign(player,{x:hq.x,z:hq.z+14,vx:0,vz:0,yaw:0,hp:player.maxHp,alive:true,respawn:0,cd:0,tgt:null,lastHit:99,kills:0}); S.kcat={}; S.ruins=[]; S.look=null;
   focus.set(player.x,0,player.z);
@@ -1655,6 +1687,7 @@ function waveSummary(){
 function waveList(n,boss,colossus){
   const c=waveCounts(n,S.lvl), L=[];
   for(const k in c) for(let i=0;i<c[k];i++) L.push(k);
+  if(hasMod('swarm')){ const n0=L.length, extra=Math.round(n0*0.5); for(let i=0;i<extra;i++) L.push(L[Math.floor(Math.random()*n0)]); }
   for(let i=L.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[L[i],L[j]]=[L[j],L[i]];}
   if(boss) for(let i=0;i<boss;i++) L.push('boss');
   if(colossus) L.push('colossus');
@@ -1704,8 +1737,8 @@ function waveCleared(){
     if(S.wave>=10) award('holdout'); if(S.wave>=20) award('ironwill');
     if(foeCore&&foeCore.dead&&S.rebuildAt&&S.wave>=S.rebuildAt){ clearFoeBase(); S.rebuilds++; buildFoeBase(S.lvl,1+0.5*S.rebuilds); S.rebuildAt=0; banner('Enemy HQ rebuilt','It is back, '+Math.round(50*S.rebuilds)+'% tougher than before.','hostile'); return; }
   }
-  const bonus=40+S.wave*10; S.supply+=bonus;
-  S.mode='inter'; S.inter=Math.max(22,30-S.wave*0.5);
+  const bonus=Math.round((40+S.wave*10)*modSup()); S.supply+=bonus;
+  S.mode='inter'; S.inter=Math.max(22,30-S.wave*0.5)*(hasMod('blitz')?0.5:1);
   S.nextSpawns=pickSpawns();
   saveGame();
   banner('Wave '+S.wave+' held','+'+bonus+' supply. Next: '+S.nextSpawns.map(sp=>targetName(sp)).filter((v,i,a)=>a.indexOf(v)===i).join(', ')+'.','good');
@@ -1721,7 +1754,7 @@ function makeFoe(type,x,z,home){
   const def=FOES[type];
   const mdl=modelFoe(type); mdl.g.position.set(x,H(x,z),z); scene.add(mdl.g);
   const n=effN(Math.max(1,S.wave))-1, scale=1+0.2*n+0.012*n*n;
-  const hp=Math.round(def.hp*scale*DF().hp);
+  const hp=Math.round(def.hp*scale*DF().hp*modHp());
   enemies.push({burrowed:!!def.burrow,cloaked:!!def.burrow,cT:def.carrier||0,type,def,g:mdl.g,body:mdl.body,x,z,px:x,pz:z,vx:0,vz:0,hp,maxHp:hp,cd:rand(0,def.rate),tgt:null,home:home,retarget:0,slowT:0,slowMul:1,flash:0,bob:Math.random()*TAU,dead:false,yaw:0});
 }
 
@@ -1861,12 +1894,12 @@ function winLevel(how){
   S.mode='won'; setBuild(null); select(null); sfx('clear');
   const L=LV(), total=sites.length, held=sites.filter(s=>s.alive).length, stars=Math.max(1,3-S.lost-(hq.hp<hq.maxHp*0.5?1:0));
   PROG.stars[S.lvl]=Math.max(PROG.stars[S.lvl]||0,stars); clearSave();
-  award('first_win'); if(stars>=3) award('flawless'); if(how==='base') award('breaker');
+  award('first_win'); if(stars>=3) award('flawless'); if((S.mods||[]).length>=3) award('daredevil'); if(how==='base') award('breaker');
   if(LEVELS.every((L2,k)=>k===S.lvl||PROG.stars[k]>0)) award('campaign');
   if(S.lvl+2>PROG.unlocked) PROG.unlocked=Math.min(LEVELS.length,S.lvl+2);
   saveProg();
   const last=S.lvl===LEVELS.length-1, next=LEVELS[S.lvl+1];
-  $('wLevel').textContent=DIFFS[OPT.diff]&&(OPT.diff!=='regular'?(OPT.diff[0].toUpperCase()+OPT.diff.slice(1)+' \u00b7 '):'')+(how==='base'?'Enemy HQ destroyed':'All '+L.waves+' waves held')+' \u00b7 Level '+(S.lvl+1)+', '+L.name;
+  $('wLevel').textContent=DIFFS[OPT.diff]&&(OPT.diff!=='regular'?(OPT.diff[0].toUpperCase()+OPT.diff.slice(1)+' \u00b7 '):'')+(how==='base'?'Enemy HQ destroyed':'All '+L.waves+' waves held')+' \u00b7 Level '+(S.lvl+1)+', '+L.name+((S.mods||[]).length?' \u00b7 '+S.mods.map(m=>MODS.find(x=>x[0]===m)[1]).join(', '):'');
   $('bigStars').innerHTML=starsHtml(stars);
   const newT=next?next.towers.filter(t=>!L.towers.includes(t)).map(t=>BUILD[t].name):[];
   $('wNote').textContent=last?'The campaign is won. Every site in Sector 7 is in friendly hands. Replay any level to chase three stars.':
@@ -2278,6 +2311,7 @@ const ABIL={
 const aimRing=makeRing(COL.signal,0.85); aimRing.visible=false;
 function useAbility(k,x,z){
   if(!(S.mode==='inter'||S.mode==='wave')||S.paused) return;
+  if(hasMod('noabil')){ sfx('deny'); floatText(player.x,H(player.x,player.z)+4,player.z,'No air support: modifier is on',COL.hostile); S.aiming=false; return; }
   if(!player.alive){ sfx('deny'); floatText(hq.x,H(hq.x,hq.z)+14,hq.z,'Abilities need the rover',COL.hostile); return; }
   if(S.cd[k]>0){ sfx('deny'); return; }
   if(k==='strike'){
@@ -2325,11 +2359,11 @@ const ABIL_KEY={strike:'Z',pulse:'C',emp:'V'};
 function refreshAbil(){
   for(const k in abilBtns){
     const o=abilBtns[k], cd=S.cd?S.cd[k]:0, ready=cd<=0, aim=k==='strike'&&S.aiming;
-    const key=(ready?'r':Math.ceil(cd))+'|'+aim;
+    const off=hasMod('noabil'), key=(ready?'r':Math.ceil(cd))+'|'+aim+'|'+off;
     if(key===o.last) continue; o.last=key;
     o.cdv.style.height=(cd/ABIL[k].cd*100).toFixed(1)+'%';
     o.ak.textContent=ready?(isTouch?'Ready':ABIL_KEY[k]):Math.ceil(cd)+' s';
-    o.b.classList.toggle('ready',ready); o.b.classList.toggle('aim',aim);
+    o.b.classList.toggle('ready',ready&&!off); o.b.classList.toggle('off',off); if(off) o.ak.textContent='Off'; o.b.classList.toggle('aim',aim);
   }
 }
 mm.addEventListener('pointerdown',e=>{
@@ -3174,7 +3208,7 @@ function toggleSpeed(){ OPT.speed=OPT.speed===1?2:1; saveOpt(); renderSpeed(); }
 function renderSpeed(){ const b=$('speedBtn'); b.innerHTML=OPT.speed+'&times;'; b.classList.toggle('fast',OPT.speed>1); }
 function toggleHelp(){ OPT.help=!OPT.help; saveOpt(); renderHelp(); }
 function renderHelp(){ $('help').hidden=!OPT.help; $('helpBtn').hidden=OPT.help; }
-function renderOpts(){
+function renderOpts(){ renderMods();
   document.querySelectorAll('#diffSeg button').forEach(b=>b.classList.toggle('on',b.dataset.d===OPT.diff));
   $('diffNote').textContent=DIFFS[OPT.diff].note;
 }
@@ -3622,7 +3656,7 @@ function updateGame(dt){
     else if(enemies.length===0) waveCleared();
   }
   if(!S.training){ S.crateT-=dt; if(S.crateT<=0){ S.crateT=rand(9,15); spawnCrate(); } }
-  S.supply+=dt*1.0; // trickle from HQ
+  S.supply+=dt*1.0*modSup(); // trickle from HQ
   updateAbilities(dt); updatePlayer(dt); updateStructures(dt); updateUnits(dt); updateFoeBase(dt); updateEnemies(dt); updateProjectiles(dt);
   if(pendingSpawns.length){ const ps=pendingSpawns; pendingSpawns=[]; ps.forEach(q=>makeFoe(q.t,q.x,q.z,q.home)); }
 }
